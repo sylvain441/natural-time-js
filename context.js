@@ -80,7 +80,7 @@ export function NaturalSunEvents(naturalDate, latitude) {
 }
 
 /**
- * MOON POSITION
+ * MOON PHASE & POSITION
  * 
  * Determines moon's position in the sky at specific natural date and lat/long position
  * @param {NaturalDate} naturalDate
@@ -92,19 +92,15 @@ export function NaturalMoonPosition(naturalDate, latitude) {
     let observer = new Observer(latitude, naturalDate.longitude, 0);
     let date = new Date(naturalDate.unixTime);
 
-    // PHASE & POSITION
+    // PHASE
     let moonPhase = MoonPhase(date);
-
     let moon = Equator(Body.Moon, date, observer, true, false);
-    let moonHorizon = Horizon(date, observer, moon.ra, moon.dec);
 
     // POSITION & ALTITUDE
-    let moonPosition = moonHorizon.azimuth;
-    let moonAltitude = Math.max(moonHorizon.altitude, 0);
+    let moonAltitude = Math.max(Horizon(date, observer, moon.ra, moon.dec).altitude, 0);
     let midmoon = SearchHourAngle(Body.Moon, observer, 0, new Date(naturalDate.nadir));
 
     return {
-        position: moonPosition, // Moon needle position in time-degree (does not match exactly the position in the sky)
         phase: moonPhase, // 0 = new-moon, 90 = first quarter, 180 = full-moon, 270 = last quarter
         altitude: moonAltitude, // Current moon altitude
         highestAltitude: midmoon.hor.altitude // Highest altitude of the moon during the day

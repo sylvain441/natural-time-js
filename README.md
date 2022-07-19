@@ -32,7 +32,7 @@ You can play with natural time at [https://naturaltime.app/](https://naturaltime
 Install NPM package with your terminal:
 
 ```console
-npm install -i natural-time-js
+npm install natural-time-js
 ```
 
 ## `NaturalDate` Class
@@ -117,7 +117,6 @@ NaturalSunEvents(naturalDate, latitude);
 // eveningGoldenHour: 277.58920993448896
 
 NaturalMoonPosition(naturalDate, latitude);
-// position: 526.0620760764069,
 // phase: 74.86175469141531,
 // altitude: 64.32391838504756,
 // highestAltitude: 69.53997976716451
