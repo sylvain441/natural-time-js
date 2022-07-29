@@ -15,7 +15,7 @@ This repository contains the JavaScript implementation of natural time.
 
 How are natural years, moons, days, and time defined ?  
 
-Read the white paper (specifications) of natural time here: [github.com/sylvain441/natural-time-white-paper](https://github.com/sylvain441/natural-time-white-paper)
+Read the full specifications of natural time here: [github.com/sylvain441/natural-time](https://github.com/sylvain441/natural-time)
 
 ### Web application
 
