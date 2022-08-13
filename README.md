@@ -4,6 +4,10 @@ Natural time is a fresh, elegant, and coherent way of measuring the movements of
 
 This **new time standard** is based on common sense and the observation of natural cycles.
 
+![Natural time app](.github/natural-time-app.jpg)
+
+Play with natural time at [https://naturaltime.app/](https://naturaltime.app/)
+
 ### JavaScript library
 
 This repository contains the JavaScript implementation of natural time.  
@@ -11,7 +15,7 @@ This repository contains the JavaScript implementation of natural time.
 `index.js`: This class translates artificial dates to natural dates.  
 `context.js`: Collection of utility functions for calculating sky context and events like moon phase, sunrise and sunset ...
 
-### White paper (specifications)
+### Natural time specifications
 
 How are natural years, moons, days, and time defined ?  
 
