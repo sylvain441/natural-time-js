@@ -1,4 +1,4 @@
-import { Seasons } from 'astronomy-engine/astronomy';
+import { Seasons } from 'astronomy-engine';
 
 const NT_CACHE = {};
 

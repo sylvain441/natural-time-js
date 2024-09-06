@@ -1,5 +1,5 @@
 import { NaturalDate } from './index.js';
-import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon } from 'astronomy-engine/astronomy';
+import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon } from 'astronomy-engine';
 
 // Improve performance with cached astronomical calculations
 const SUN_CACHE = {};
