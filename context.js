@@ -1,9 +1,8 @@
 import { NaturalDate } from './index.js';
-import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon } from 'astronomy-engine';
+import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon, Seasons } from 'astronomy-engine';
 
-// Improve performance with cached astronomical calculations
-const SUN_CACHE = {};
-const MOON_CACHE = {};
+// Caching recuring astronomical calculations
+const ASTRO_CACHE = {};
 
 /**
  * SUN ALTITUDE
@@ -39,10 +38,11 @@ export function NaturalSunAltitude(naturalDate, latitude) {
  */
 export function NaturalSunEvents(naturalDate, latitude) {
 
-    let cache_id = naturalDate.toDateString() + latitude + naturalDate.longitude;
+    let cache_id = `SUN_${naturalDate.toDateString()}_${latitude}_${naturalDate.longitude}`;
     
-    if(SUN_CACHE?.[cache_id])
-		return SUN_CACHE[cache_id];
+    if (ASTRO_CACHE[cache_id]) {
+        return ASTRO_CACHE[cache_id];
+    }
 
     let observer = new Observer(latitude, naturalDate.longitude, 0);
     let nadir = new Date(naturalDate.nadir);
@@ -69,7 +69,7 @@ export function NaturalSunEvents(naturalDate, latitude) {
     let eveningGoldenHour = naturalDate.getTimeOfEvent(SearchAltitude(Body.Sun, observer, -1, nadir, 2, +6));
     if(!eveningGoldenHour) eveningGoldenHour = isSummer ? 360 : 180;
     
-	return SUN_CACHE[cache_id] = {
+	return ASTRO_CACHE[cache_id] = {
         sunrise: sunrise,
         sunset: sunset,
         nightStart: nightStart,
@@ -117,10 +117,11 @@ export function NaturalMoonPosition(naturalDate, latitude) {
  */
 export function NaturalMoonEvents(naturalDate, latitude) {
 
-    let cache_id = naturalDate.toDateString() + latitude + naturalDate.longitude;
+    let cache_id = `MOON_${naturalDate.toDateString()}_${latitude}_${naturalDate.longitude}`;
     
-    if(MOON_CACHE?.[cache_id])
-		return MOON_CACHE[cache_id];
+    if (ASTRO_CACHE[cache_id]) {
+        return ASTRO_CACHE[cache_id];
+    }
 
     let observer = new Observer(latitude, naturalDate.longitude, 0);
 
@@ -128,8 +129,35 @@ export function NaturalMoonEvents(naturalDate, latitude) {
 	let moonrise = SearchRiseSet(Body.Moon, observer, +1, new Date(naturalDate.nadir), 1);
     let moonset = SearchRiseSet(Body.Moon, observer, -1, new Date(naturalDate.nadir), 1);
 
-    return MOON_CACHE[cache_id] = {
+    return ASTRO_CACHE[cache_id] = {
         moonrise: naturalDate.getTimeOfEvent(moonrise),
         moonset: naturalDate.getTimeOfEvent(moonset),
     }
+}
+
+/**
+ * MUSTACHES RANGE
+ * 
+ * The mustaches represents the shortest and longest day/night length
+ * @param {Number} latitude
+ * @returns Object { winterSunrise, winterSunset, summerSunrise, summerSunset }
+ */
+export function MustachesRange(naturalDate, latitude) {
+    let cache_id = `MUSTACHES_${naturalDate.year}_${latitude}`;
+    
+    if (ASTRO_CACHE[cache_id]) {
+        return ASTRO_CACHE[cache_id];
+    }
+
+    // Get the solstices for the current year
+    const currentSeasons = Seasons(new Date(naturalDate.unixTime).getFullYear());
+    let winterSolsticeSunEvents = NaturalSunEvents(new NaturalDate(currentSeasons.dec_solstice.date, 0), latitude);
+    let summerSolsticeSunEvents = NaturalSunEvents(new NaturalDate(currentSeasons.jun_solstice.date, 0), latitude);
+
+    return ASTRO_CACHE[cache_id] = {
+        winterSunrise: winterSolsticeSunEvents.sunrise,
+        winterSunset: winterSolsticeSunEvents.sunset,
+        summerSunrise: summerSolsticeSunEvents.sunrise,
+        summerSunset: summerSolsticeSunEvents.sunset,
+    };
 }
