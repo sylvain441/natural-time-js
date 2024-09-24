@@ -188,7 +188,7 @@ export class NaturalDate {
 	 * @returns ex: "NT+95.4" "NT-78"
 	 */
 	toLongitudeString(decimals = 1) {
-		if(this.longitude == 0)
+		if(Math.abs(Math.round(this.longitude)) == 0)
 			return "NTZ"
 			
 		return "NT" + (this.longitude > 0 ? "+" : "") + this.longitude.toFixed(decimals) + "";
