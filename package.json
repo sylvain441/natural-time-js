@@ -1,6 +1,6 @@
 {
   "name": "natural-time-js",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Natural time is a fresh, elegant, and coherent way of measuring the movements of time here on the Earth. This new time standard is based on common sense and the observation of natural cycles. Learn more: https://naturaltime.app. This JavaScript Class translates gregorian artificial datetime to natural datetime",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,8 @@
     "Time",
     "Nature",
     "Earth",
-    "Date"
+    "Date",
+    "Natural Time"
   ],
   "author": "Sylvain 441",
   "license": "CC0-1.0",
