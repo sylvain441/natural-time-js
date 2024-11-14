@@ -53,9 +53,9 @@ export class NaturalDate {
 	 */
 	constructor(date, longitude) {
 
-		date = new Date(date);
+		date = new Date(date || Date.now());
 		this.unixTime = date.getTime();
-		this.longitude = longitude;
+		this.longitude = longitude || 0;
 		
 		if (Number.isFinite(this.unixTime)) {
 
