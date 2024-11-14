@@ -154,10 +154,18 @@ export function MustachesRange(naturalDate, latitude) {
     let winterSolsticeSunEvents = NaturalSunEvents(new NaturalDate(currentSeasons.dec_solstice.date, 0), latitude);
     let summerSolsticeSunEvents = NaturalSunEvents(new NaturalDate(currentSeasons.jun_solstice.date, 0), latitude);
 
+    // Calculate average mustache angle from 90° and 270° (usefull for farnorth and farsouth locations where mustaches become unsymetric)
+    let averageMustacheAngle = latitude >= 0 ? 
+        (winterSolsticeSunEvents.sunrise - summerSolsticeSunEvents.sunrise + summerSolsticeSunEvents.sunset - winterSolsticeSunEvents.sunset) / 4 : 
+        (summerSolsticeSunEvents.sunrise - winterSolsticeSunEvents.sunrise + winterSolsticeSunEvents.sunset - summerSolsticeSunEvents.sunset) / 4;
+    
+    averageMustacheAngle = Math.min(Math.max(averageMustacheAngle, 0), 90);
+    
     return ASTRO_CACHE[cache_id] = {
         winterSunrise: winterSolsticeSunEvents.sunrise,
         winterSunset: winterSolsticeSunEvents.sunset,
         summerSunrise: summerSolsticeSunEvents.sunrise,
         summerSunset: summerSolsticeSunEvents.sunset,
+        averageMustacheAngle: averageMustacheAngle
     };
 }
