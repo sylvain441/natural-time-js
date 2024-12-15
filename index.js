@@ -1,28 +1,61 @@
-import { Seasons } from 'astronomy-engine';
+/**
+ * @module natural-time-js
+ * @description Natural time implementation for JavaScript - translates artificial dates to natural dates
+ */
 
-const NT_CACHE = {};
+import { Seasons } from 'astronomy-engine';
+import { MILLISECONDS_PER_DAY, END_OF_ARTIFICIAL_TIME } from './constants.js';
+
+const yearContextCache = new Map();
 
 /**
- * NATURAL TIME
- * 
- * Natural time is a fresh, elegant, and coherent way of measuring the movements of time here on the Earth.
- * This new time standard is based on common sense and the observation of natural cycles.
- * Learn more: https://naturaltime.app
- * 
- * This JavaScript Class translates gregorian artificial datetime to natural datetime
- * https://github.com/sylvain441/natural-time-js
- * 
- * Special thanks to Don Cross, author of the Astronomy Library to calculate celestial body events
- * https://github.com/cosinekitty/astronomy
- * 
- * @author Biquette 🐐 
- * @contact sylvain441@proton.me
- * 
+ * Calculates year context for natural date calculations
+ * @param {number} artificialYear - Gregorian calendar year
+ * @param {number} longitude - Longitude in degrees (-180 to 180)
+ * @returns {{
+ *   start: number,
+ *   duration: number
+ * }} Year context with start timestamp and duration
+ * @private
+ */
+const calculateYearContext = (artificialYear, longitude) => {
+	const cacheKey = `${artificialYear}_${longitude}`;
+	
+	if (yearContextCache.has(cacheKey)) {
+		return yearContextCache.get(cacheKey);
+	}
+	
+	const startSolstice = Seasons(artificialYear).dec_solstice.date;
+	const endSolstice = Seasons(artificialYear + 1).dec_solstice.date;
+	
+	const startNewYear = Date.UTC(
+		startSolstice.getUTCFullYear(),
+		startSolstice.getUTCMonth(),
+		startSolstice.getUTCDate() + (startSolstice.getUTCHours() >= 12 ? 1 : 0),
+		12, 0, 0
+	);
+	
+	const endNewYear = Date.UTC(
+		endSolstice.getUTCFullYear(),
+		endSolstice.getUTCMonth(),
+		endSolstice.getUTCDate() + (endSolstice.getUTCHours() >= 12 ? 1 : 0),
+		12, 0, 0
+	);
+	
+	const context = {
+		start: parseInt(startNewYear + (-longitude + 180) * MILLISECONDS_PER_DAY/360),
+		duration: (endNewYear - startNewYear) / MILLISECONDS_PER_DAY
+	};
+	
+	yearContextCache.set(cacheKey, context);
+	return context;
+}
+
+/**
+ * Natural date class for converting artificial (Gregorian) dates to natural time
+ * @class
  */
 export class NaturalDate {
-
-	static END_OF_ARTIFICIAL_TIME = 1356091200000; // 2012-12-22 00:00:00 at +180°;
-	static MILLISECONDS_PER_DAY = 86400000; // 24*60*60*1000
 
 	unixTime; // Artificial gregorian date (UNIX timestamp)
 	longitude; // Longitude (between -180° to +180°)
@@ -47,62 +80,40 @@ export class NaturalDate {
 	nadir; // Beginning of the day at the current longitude (UNIX timestamp)
 
 	/**
-	 * Computes natural date from gregorian date and longitude
-	 * @param {Date} date Date object or Unix timestamp
-	 * @param {Number} longitude From -180 to + 180
+	 * Creates a new natural date instance
+	 * @param {Date|number} date - JavaScript Date object or Unix timestamp
+	 * @param {number} longitude - Longitude in degrees (-180 to 180)
+	 * @throws {Error} If inputs are invalid
 	 */
 	constructor(date, longitude) {
-
+		// Validate longitude
+		if (longitude !== undefined && (typeof longitude !== 'number' || longitude < -180 || longitude > 180)) {
+			throw new Error('Longitude must be between -180 and +180');
+		}
+		
 		date = new Date(date || Date.now());
+		if (isNaN(date.getTime())) {
+			throw new Error('Invalid date provided');
+		}
+		
 		this.unixTime = date.getTime();
 		this.longitude = longitude || 0;
 		
 		if (Number.isFinite(this.unixTime)) {
-
-			const getYearContext = (artificialYear, longitude) => {
-
-				// We cache astronomical calculations
-				let cache_id = `${artificialYear}_${longitude}`;
-				if(NT_CACHE?.[cache_id])
-					return NT_CACHE[cache_id];
-
-				// Search for December solstices
-				let startSolstice = Seasons(artificialYear).dec_solstice.date;
-				let endSolstice = Seasons(artificialYear + 1).dec_solstice.date;
-		
-				// Calculate next time it's midnight at the 180th meridian after solstice (mean time)
-				// NB: Midnight at +180° equals midday the previous day at +0°
-				let startNewYear = Date.UTC(
-						startSolstice.getUTCFullYear(), 
-						startSolstice.getUTCMonth(), 
-						startSolstice.getUTCDate() + (startSolstice.getUTCHours() >= 12 ? 1 : 0),
-						12, 0, 0);
-				let endNewYear = Date.UTC(
-						endSolstice.getUTCFullYear(), 
-						endSolstice.getUTCMonth(), 
-						endSolstice.getUTCDate() + (endSolstice.getUTCHours() >= 12 ? 1 : 0),
-						12, 0, 0);
-		
-				return NT_CACHE[cache_id] = {
-					start: parseInt(startNewYear + (-longitude + 180) * NaturalDate.MILLISECONDS_PER_DAY/360),
-					duration: (endNewYear - startNewYear) / NaturalDate.MILLISECONDS_PER_DAY
-				};
-			}
-
 			// YEAR START & DURATION
-			let yearContext = getYearContext(date.getUTCFullYear()-1, longitude);
+			let yearContext = calculateYearContext(date.getUTCFullYear()-1, longitude);
 			
 			// Correction if between the beginning of natural year and the end of the artificial year
-			if(this.unixTime - yearContext.start >= yearContext.duration * NaturalDate.MILLISECONDS_PER_DAY)
-				yearContext = getYearContext(date.getUTCFullYear(), longitude);
+			if(this.unixTime - yearContext.start >= yearContext.duration * MILLISECONDS_PER_DAY)
+				yearContext = calculateYearContext(date.getUTCFullYear(), longitude);
 			
 			this.yearStart = yearContext.start;
 			this.yearDuration = yearContext.duration;
 
-			let timeSinceLocalYearStart = (this.unixTime - this.yearStart) / NaturalDate.MILLISECONDS_PER_DAY;
+			let timeSinceLocalYearStart = (this.unixTime - this.yearStart) / MILLISECONDS_PER_DAY;
 
 			// YEAR
-			this.year = new Date(this.yearStart).getUTCFullYear() - new Date(NaturalDate.END_OF_ARTIFICIAL_TIME).getUTCFullYear()+ 1;
+			this.year = new Date(this.yearStart).getUTCFullYear() - new Date(END_OF_ARTIFICIAL_TIME).getUTCFullYear()+ 1;
 
 			// MOON
 			this.moon = parseInt(timeSinceLocalYearStart / 28) + 1; 
@@ -112,16 +123,16 @@ export class NaturalDate {
 			this.weekOfMoon = parseInt(timeSinceLocalYearStart / 7) % 4 + 1;
 			
 			// DAY
-			this.day = parseInt((this.unixTime - (NaturalDate.END_OF_ARTIFICIAL_TIME + (-longitude + 180) * NaturalDate.MILLISECONDS_PER_DAY/360)) / NaturalDate.MILLISECONDS_PER_DAY);
+			this.day = parseInt((this.unixTime - (END_OF_ARTIFICIAL_TIME + (-longitude + 180) * MILLISECONDS_PER_DAY/360)) / MILLISECONDS_PER_DAY);
 			this.dayOfYear = parseInt(timeSinceLocalYearStart) + 1;
 			this.dayOfMoon = parseInt(timeSinceLocalYearStart) % 28 + 1;
 			this.dayOfWeek = parseInt(timeSinceLocalYearStart) % 7 + 1;
 
 			// NADIR (i.e day start, midnight)
-			this.nadir = this.yearStart + parseInt(timeSinceLocalYearStart) * NaturalDate.MILLISECONDS_PER_DAY;
+			this.nadir = this.yearStart + parseInt(timeSinceLocalYearStart) * MILLISECONDS_PER_DAY;
 
 			// TIME
-			this.time = (this.unixTime - this.nadir) * 360 / NaturalDate.MILLISECONDS_PER_DAY;
+			this.time = (this.unixTime - this.nadir) * 360 / MILLISECONDS_PER_DAY;
 
 			// RAINBOW DAY
 			this.isRainbowDay = this.dayOfYear > 13*28;
@@ -133,19 +144,19 @@ export class NaturalDate {
 	}
 
 	/**
-	 * Returns the time at specified event's date
-	 * @param {Date} event 
-	 * @returns Time on a 360° scale or null if out of range
+	 * Gets the time of an astronomical event in natural degrees
+	 * @param {Date|number} event - Event timestamp
+	 * @returns {number|false} Event time in natural degrees (0-360) or false if out of range
 	 */
 	getTimeOfEvent(event) {
 		// Make sure it's a unix timestamp
 		event = new Date(event).getTime();
 
 		// Check if not out of range
-		if(event < this.nadir || event > this.nadir + NaturalDate.MILLISECONDS_PER_DAY) 
+		if(event < this.nadir || event > this.nadir + MILLISECONDS_PER_DAY) 
 			return false;
 
-		return (event - this.nadir) * (360 / NaturalDate.MILLISECONDS_PER_DAY);
+		return (event - this.nadir) * (360 / MILLISECONDS_PER_DAY);
 	}
 	
 	/**
@@ -153,7 +164,7 @@ export class NaturalDate {
 	 * @returns ex: "004)04)01 113°00 NT+95"
 	 */
 	toString() {
-		return this.toDateString() + " " + this.toTimeString() + " " + this.toLongitudeString();
+		return `${this.toDateString()} ${this.toTimeString()} ${this.toLongitudeString()}`;
 	}
 
 	/**
@@ -162,10 +173,10 @@ export class NaturalDate {
 	 * @returns ex: "004)04)01"
 	 */
 	toDateString(separator = ')') {
-		if(this.isRainbowDay)
-			return `${this.toYearString()}${separator}RAINBOW${this.dayOfYear == 366 ? "+" : ""}`;
-		else
-			return `${this.toYearString()}${separator}${this.toMoonString()}${separator}${this.toDayOfMoonString()}`;
+		if(this.isRainbowDay) {
+			return `${this.toYearString()}${separator}RAINBOW${this.dayOfYear === 366 ? "+" : ""}`;
+		}
+		return `${this.toYearString()}${separator}${this.toMoonString()}${separator}${this.toDayOfMoonString()}`;
 	}
 
 	/**

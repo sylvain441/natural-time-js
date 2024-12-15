@@ -1,171 +1,285 @@
+/**
+ * @module context
+ * @description Provides astronomical calculations and events for natural time, including sun and moon positions
+ */
+
 import { NaturalDate } from './index.js';
 import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon, Seasons } from 'astronomy-engine';
+import { HEMISPHERES, SEASONS, ANGLES } from './constants.js';
+import { 
+    isValidLatitude, 
+    isValidLongitude, 
+    isValidNaturalDate, 
+    throwValidationError 
+} from './utils/validators.js';
 
-// Caching recuring astronomical calculations
-const ASTRO_CACHE = {};
+// Move cache to its own module for better separation of concerns
+const astroCache = new Map();
 
 /**
- * SUN ALTITUDE
- * 
- * Determine the sun altitude and max altitude from a specific naturalDate at given lat/long coordinates
- * @param {NaturalDate} naturalDate
- * @param {Number} latitude
- * @returns Object { altitude, highestAltitude }
+ * Determines the hemisphere based on latitude
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @returns {string} HEMISPHERES.NORTH or HEMISPHERES.SOUTH
+ * @private
+ */
+const getHemisphere = (latitude) => latitude >= 0 ? HEMISPHERES.NORTH : HEMISPHERES.SOUTH;
+
+/**
+ * Determines if the given day is in summer season for the specified latitude
+ * @param {number} dayOfYear - Day of the year (1-366)
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @returns {boolean} True if the day is in summer season
+ * @private
+ */
+const isSummerSeason = (dayOfYear, latitude) => {
+    const hemisphere = getHemisphere(latitude);
+    return hemisphere === HEMISPHERES.NORTH 
+        ? (dayOfYear >= SEASONS.SUMMER_START_DAY && dayOfYear <= SEASONS.SUMMER_END_DAY)
+        : (dayOfYear <= SEASONS.SUMMER_START_DAY || dayOfYear >= SEASONS.SUMMER_END_DAY);
+}
+
+/**
+ * Creates an astronomical observer at the specified coordinates
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @param {number} longitude - Longitude in degrees (-180 to 180)
+ * @returns {Observer} Astronomy-engine observer instance
+ * @private
+ */
+const createObserver = (latitude, longitude) => new Observer(latitude, longitude, 0);
+
+/**
+ * Calculates sun altitude data for a given natural date and latitude
+ * @param {NaturalDate} naturalDate - Natural date instance
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @returns {{
+ *   altitude: number,
+ *   highestAltitude: number
+ * }} Sun altitude data
+ * @throws {Error} If inputs are invalid or calculation fails
  */
 export function NaturalSunAltitude(naturalDate, latitude) {
+    // Validate inputs
+    if (!isValidNaturalDate(naturalDate)) {
+        throwValidationError('naturalDate', naturalDate, 'NaturalDate instance');
+    }
+    if (!isValidLatitude(latitude)) {
+        throwValidationError('latitude', latitude, 'number between -90 and 90');
+    }
 
-    let observer = new Observer(latitude, naturalDate.longitude, 0);
-    let date = new Date(naturalDate.unixTime);
-
-    let sun = Equator(Body.Sun, date, observer, true, false);
-    let sunAltitude =  Math.max(Horizon(date, observer, sun.ra, sun.dec).altitude, 0);
-    let midday = SearchHourAngle(Body.Sun, observer, 0, new Date(naturalDate.nadir));
-
-    return {
-        altitude: sunAltitude, // Current sun altitude
-        highestAltitude: midday.hor.altitude // Highest altitude of the sun during the day
+    try {
+        const observer = createObserver(latitude, naturalDate.longitude);
+        const date = new Date(naturalDate.unixTime);
+        const sun = Equator(Body.Sun, date, observer, true, false);
+        
+        return {
+            altitude: Math.max(Horizon(date, observer, sun.ra, sun.dec).altitude, 0),
+            highestAltitude: SearchHourAngle(Body.Sun, observer, 0, new Date(naturalDate.nadir)).hor.altitude
+        }
+    } catch (error) {
+        console.error('Error in NaturalSunAltitude:', error);
+        throw error;
     }
 }
 
-
 /**
- * SUN EVENTS
- * 
- * Determine natural day's main sun events like sunrise, sunset, nightStart ...
- * @param {NaturalDate} naturalDate
- * @param {Number} latitude
- * @returns Object { sunrise, sunset, nightStart, nightEnd, morningGoldenHour, eveningGoldenHour }
+ * Calculates sun-related events for a given natural date and latitude
+ * @param {NaturalDate} naturalDate - Natural date instance
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @returns {{
+ *   sunrise: number,
+ *   sunset: number,
+ *   nightStart: number,
+ *   nightEnd: number,
+ *   morningGoldenHour: number,
+ *   eveningGoldenHour: number
+ * }} Sun events in natural degrees (0-360)
+ * @throws {Error} If inputs are invalid or calculation fails
  */
 export function NaturalSunEvents(naturalDate, latitude) {
-
-    let cache_id = `SUN_${naturalDate.toDateString()}_${latitude}_${naturalDate.longitude}`;
-    
-    if (ASTRO_CACHE[cache_id]) {
-        return ASTRO_CACHE[cache_id];
+    // Validate inputs
+    if (!isValidNaturalDate(naturalDate)) {
+        throwValidationError('naturalDate', naturalDate, 'NaturalDate instance');
+    }
+    if (!isValidLatitude(latitude)) {
+        throwValidationError('latitude', latitude, 'number between -90 and 90');
     }
 
-    let observer = new Observer(latitude, naturalDate.longitude, 0);
-    let nadir = new Date(naturalDate.nadir);
-
-    let isSummer = 
-        latitude >= 0 && (naturalDate.dayOfYear >= 91 && naturalDate.dayOfYear <= 273) || // Northern hemisphere summer
-        latitude <= 0 && (naturalDate.dayOfYear <= 91 || naturalDate.dayOfYear >= 273); // Southern hemisphere summer
-
-    // SUNRISE & SUNSET
-    let sunrise = naturalDate.getTimeOfEvent(SearchRiseSet(Body.Sun, observer, +1, nadir, 1));
-    if(!sunrise) sunrise = isSummer ? 0 : 180;
-    let sunset = naturalDate.getTimeOfEvent(SearchRiseSet(Body.Sun, observer, -1, nadir, 1));
-    if(!sunset) sunset = isSummer ? 360 : 180;
-
-    // NIGHT (-12° altitude)
-    let nightStart = naturalDate.getTimeOfEvent(SearchAltitude(Body.Sun, observer, -1, nadir, 2, -12));
-    if(!nightStart) nightStart = isSummer ? 360 : 180;
-    let nightEnd = naturalDate.getTimeOfEvent(SearchAltitude(Body.Sun, observer, +1, nadir, 2, -12));
-    if(!nightEnd) nightEnd = isSummer ? 0 : 180;
-
-    // GOLDEN HOUR (+6° altitude)
-    let morningGoldenHour = naturalDate.getTimeOfEvent(SearchAltitude(Body.Sun, observer, +1, nadir, 2, +6));
-    if(!morningGoldenHour) morningGoldenHour = isSummer ? 0 : 180;
-    let eveningGoldenHour = naturalDate.getTimeOfEvent(SearchAltitude(Body.Sun, observer, -1, nadir, 2, +6));
-    if(!eveningGoldenHour) eveningGoldenHour = isSummer ? 360 : 180;
+    const cacheKey = `SUN_${naturalDate.toDateString()}_${latitude}_${naturalDate.longitude}`;
     
-	return ASTRO_CACHE[cache_id] = {
-        sunrise: sunrise,
-        sunset: sunset,
-        nightStart: nightStart,
-        nightEnd: nightEnd,
-        morningGoldenHour: morningGoldenHour,
-        eveningGoldenHour: eveningGoldenHour
+    try {
+        if (astroCache.has(cacheKey)) {
+            const cachedResult = astroCache.get(cacheKey);
+            if (cachedResult && typeof cachedResult === 'object') {
+                return cachedResult;
+            }
+        }
+
+        const observer = createObserver(latitude, naturalDate.longitude);
+        const nadir = new Date(naturalDate.nadir);
+        const isSummer = isSummerSeason(naturalDate.dayOfYear, latitude);
+
+        // Helper function to handle edge cases
+        const getEventTime = (searchResult, isSummerDefault) => {
+            if (!searchResult) {
+                return isSummer ? (isSummerDefault ? 360 : 0) : 180;
+            }
+            return naturalDate.getTimeOfEvent(searchResult);
+        };
+
+        const events = {
+            sunrise: getEventTime(SearchRiseSet(Body.Sun, observer, +1, nadir, 1), false),
+            sunset: getEventTime(SearchRiseSet(Body.Sun, observer, -1, nadir, 1), true),
+            nightStart: getEventTime(SearchAltitude(Body.Sun, observer, -1, nadir, 2, ANGLES.NIGHT_ALTITUDE), true),
+            nightEnd: getEventTime(SearchAltitude(Body.Sun, observer, +1, nadir, 2, ANGLES.NIGHT_ALTITUDE), false),
+            morningGoldenHour: getEventTime(SearchAltitude(Body.Sun, observer, +1, nadir, 2, ANGLES.GOLDEN_HOUR_ALTITUDE), false),
+            eveningGoldenHour: getEventTime(SearchAltitude(Body.Sun, observer, -1, nadir, 2, ANGLES.GOLDEN_HOUR_ALTITUDE), true)
+        };
+
+        astroCache.set(cacheKey, events);
+        return events;
+    } catch (error) {
+        console.error('Error in NaturalSunEvents:', error);
+        throw error;
     }
 }
 
 /**
- * MOON PHASE & POSITION
- * 
- * Determines moon's position in the sky at specific natural date and lat/long position
- * @param {NaturalDate} naturalDate
- * @param {Number} latitude
- * @returns Object { position, phase, altitude, highestAltitude }
+ * Calculates moon position and phase data for a given natural date and latitude
+ * @param {NaturalDate} naturalDate - Natural date instance
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @returns {{
+ *   phase: number,
+ *   altitude: number,
+ *   highestAltitude: number
+ * }} Moon position and phase data
  */
 export function NaturalMoonPosition(naturalDate, latitude) {
+    // Validate inputs
+    if (!isValidNaturalDate(naturalDate)) {
+        throwValidationError('naturalDate', naturalDate, 'NaturalDate instance');
+    }
+    if (!isValidLatitude(latitude)) {
+        throwValidationError('latitude', latitude, 'number between -90 and 90');
+    }
 
-    let observer = new Observer(latitude, naturalDate.longitude, 0);
-    let date = new Date(naturalDate.unixTime);
-
-    // PHASE
-    let moonPhase = MoonPhase(date);
-    let moon = Equator(Body.Moon, date, observer, true, false);
-
-    // POSITION & ALTITUDE
-    let moonAltitude = Math.max(Horizon(date, observer, moon.ra, moon.dec).altitude, 0);
-    let midmoon = SearchHourAngle(Body.Moon, observer, 0, new Date(naturalDate.nadir));
-
-    return {
-        phase: moonPhase, // 0 = new-moon, 90 = first quarter, 180 = full-moon, 270 = last quarter
-        altitude: moonAltitude, // Current moon altitude
-        highestAltitude: midmoon.hor.altitude // Highest altitude of the moon during the day
+    try {
+        const observer = createObserver(latitude, naturalDate.longitude);
+        const date = new Date(naturalDate.unixTime);
+        const moon = Equator(Body.Moon, date, observer, true, false);
+        
+        return {
+            phase: MoonPhase(date),
+            altitude: Math.max(Horizon(date, observer, moon.ra, moon.dec).altitude, 0),
+            highestAltitude: SearchHourAngle(Body.Moon, observer, 0, new Date(naturalDate.nadir)).hor.altitude
+        }
+    } catch (error) {
+        console.error('Error in NaturalMoonPosition:', error);
+        return {
+            phase: 0,
+            altitude: 0,
+            highestAltitude: 0
+        }
     }
 }
 
 /**
- * MOON EVENTS
- * 
- * Determine natural day's moonrise and moonset
- * @param {NaturalDate} naturalDate
- * @param {Number} latitude
- * @returns Object { moonrise, moonset }
+ * Calculates moon rise and set events for a given natural date and latitude
+ * @param {NaturalDate} naturalDate - Natural date instance
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @returns {{
+ *   moonrise: number|null,
+ *   moonset: number|null
+ * }} Moon events in natural degrees (0-360)
  */
 export function NaturalMoonEvents(naturalDate, latitude) {
-
-    let cache_id = `MOON_${naturalDate.toDateString()}_${latitude}_${naturalDate.longitude}`;
+    const cacheKey = `MOON_${naturalDate.toDateString()}_${latitude}_${naturalDate.longitude}`;
     
-    if (ASTRO_CACHE[cache_id]) {
-        return ASTRO_CACHE[cache_id];
-    }
+    try {
+        if (astroCache.has(cacheKey)) {
+            return astroCache.get(cacheKey);
+        }
 
-    let observer = new Observer(latitude, naturalDate.longitude, 0);
+        const observer = createObserver(latitude, naturalDate.longitude);
+        const nadir = new Date(naturalDate.nadir);
 
-    // MOONRISE & MOONSET
-	let moonrise = SearchRiseSet(Body.Moon, observer, +1, new Date(naturalDate.nadir), 1);
-    let moonset = SearchRiseSet(Body.Moon, observer, -1, new Date(naturalDate.nadir), 1);
+        const moonrise = SearchRiseSet(Body.Moon, observer, +1, nadir, 1);
+        const moonset = SearchRiseSet(Body.Moon, observer, -1, nadir, 1);
 
-    return ASTRO_CACHE[cache_id] = {
-        moonrise: naturalDate.getTimeOfEvent(moonrise),
-        moonset: naturalDate.getTimeOfEvent(moonset),
+        const events = {
+            moonrise: naturalDate.getTimeOfEvent(moonrise),
+            moonset: naturalDate.getTimeOfEvent(moonset)
+        };
+
+        astroCache.set(cacheKey, events);
+        return events;
+    } catch (error) {
+        console.error('Error calculating moon events:', error);
+        return {
+            moonrise: null,
+            moonset: null
+        }
     }
 }
 
 /**
- * MUSTACHES RANGE
- * 
- * The mustaches represents the shortest and longest day/night length
- * @param {Number} latitude
- * @returns Object { winterSunrise, winterSunset, summerSunrise, summerSunset }
+ * Calculates the range of sun positions between winter and summer solstices (average mustaches angle)
+ * @param {NaturalDate} naturalDate - Natural date instance
+ * @param {number} latitude - Latitude in degrees (-90 to 90)
+ * @returns {{
+ *   winterSunrise: number,
+ *   winterSunset: number,
+ *   summerSunrise: number,
+ *   summerSunset: number,
+ *   averageMustacheAngle: number
+ * }} Solstice sun positions and mustache angle
  */
 export function MustachesRange(naturalDate, latitude) {
-    let cache_id = `MUSTACHES_${naturalDate.year}_${latitude}`;
+    const cacheKey = `MUSTACHES_${naturalDate.year}_${latitude}`;
     
-    if (ASTRO_CACHE[cache_id]) {
-        return ASTRO_CACHE[cache_id];
+    try {
+        if (astroCache.has(cacheKey)) {
+            return astroCache.get(cacheKey);
+        }
+
+        const currentYear = new Date(naturalDate.unixTime).getFullYear();
+        const currentSeasons = Seasons(currentYear);
+        
+        const winterSolsticeSunEvents = NaturalSunEvents(
+            new NaturalDate(currentSeasons.dec_solstice.date, 0), 
+            latitude
+        );
+        const summerSolsticeSunEvents = NaturalSunEvents(
+            new NaturalDate(currentSeasons.jun_solstice.date, 0), 
+            latitude
+        );
+
+        const averageMustacheAngle = Math.min(Math.max(
+            latitude >= 0 
+                ? (winterSolsticeSunEvents.sunrise - summerSolsticeSunEvents.sunrise + 
+                   summerSolsticeSunEvents.sunset - winterSolsticeSunEvents.sunset) / 4
+                : (summerSolsticeSunEvents.sunrise - winterSolsticeSunEvents.sunrise + 
+                   winterSolsticeSunEvents.sunset - summerSolsticeSunEvents.sunset) / 4,
+            0
+        ), 90);
+
+        const result = {
+            winterSunrise: winterSolsticeSunEvents.sunrise,
+            winterSunset: winterSolsticeSunEvents.sunset,
+            summerSunrise: summerSolsticeSunEvents.sunrise,
+            summerSunset: summerSolsticeSunEvents.sunset,
+            averageMustacheAngle
+        };
+
+        astroCache.set(cacheKey, result);
+        return result;
+    } catch (error) {
+        console.error('Error calculating mustaches range:', error);
+        return {
+            winterSunrise: 0,
+            winterSunset: 0,
+            summerSunrise: 0,
+            summerSunset: 0,
+            averageMustacheAngle: 0
+        }
     }
-
-    // Get the solstices for the current year
-    const currentSeasons = Seasons(new Date(naturalDate.unixTime).getFullYear());
-    let winterSolsticeSunEvents = NaturalSunEvents(new NaturalDate(currentSeasons.dec_solstice.date, 0), latitude);
-    let summerSolsticeSunEvents = NaturalSunEvents(new NaturalDate(currentSeasons.jun_solstice.date, 0), latitude);
-
-    // Calculate average mustache angle from 90° and 270° (usefull for farnorth and farsouth locations where mustaches become unsymetric)
-    let averageMustacheAngle = latitude >= 0 ? 
-        (winterSolsticeSunEvents.sunrise - summerSolsticeSunEvents.sunrise + summerSolsticeSunEvents.sunset - winterSolsticeSunEvents.sunset) / 4 : 
-        (summerSolsticeSunEvents.sunrise - winterSolsticeSunEvents.sunrise + winterSolsticeSunEvents.sunset - summerSolsticeSunEvents.sunset) / 4;
-    
-    averageMustacheAngle = Math.min(Math.max(averageMustacheAngle, 0), 90);
-    
-    return ASTRO_CACHE[cache_id] = {
-        winterSunrise: winterSolsticeSunEvents.sunrise,
-        winterSunset: winterSolsticeSunEvents.sunset,
-        summerSunrise: summerSolsticeSunEvents.sunrise,
-        summerSunset: summerSolsticeSunEvents.sunset,
-        averageMustacheAngle: averageMustacheAngle
-    };
 }
