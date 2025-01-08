@@ -5,13 +5,48 @@
 
 import { NaturalDate } from './index.js';
 import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon, Seasons } from 'astronomy-engine';
-import { HEMISPHERES, SEASONS, ANGLES } from './constants.js';
 import { 
     isValidLatitude, 
     isValidLongitude, 
     isValidNaturalDate, 
     throwValidationError 
 } from './utils/validators.js';
+
+/**
+ * Hemisphere identifiers for geographical calculations
+ * @constant
+ * @enum {string}
+ * @readonly
+ */
+export const HEMISPHERES = {
+    NORTH: 'NORTH',
+    SOUTH: 'SOUTH'
+};
+
+/**
+ * Day numbers marking the start and end of summer season
+ * Day 1 represents January 1st
+ * @constant
+ * @enum {number}
+ * @readonly
+ */
+export const SEASONS = {
+    /** Day 91 (typically April 1st) */
+    SUMMER_START_DAY: 91,
+    /** Day 273 (typically September 30th) */
+    SUMMER_END_DAY: 273
+};
+
+/**
+ * Solar altitude thresholds in degrees for different daylight conditions
+ * @constant
+ * @enum {number}
+ * @readonly
+ */
+export const ANGLES = {
+    NIGHT_ALTITUDE: -12,
+    GOLDEN_HOUR_ALTITUDE: 6
+};
 
 // Move cache to its own module for better separation of concerns
 const astroCache = new Map();

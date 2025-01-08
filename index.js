@@ -4,7 +4,6 @@
  */
 
 import { Seasons } from 'astronomy-engine';
-import { MILLISECONDS_PER_DAY, END_OF_ARTIFICIAL_TIME } from './constants.js';
 
 const yearContextCache = new Map();
 
@@ -43,8 +42,8 @@ const calculateYearContext = (artificialYear, longitude) => {
 	);
 	
 	const context = {
-		start: parseInt(startNewYear + (-longitude + 180) * MILLISECONDS_PER_DAY/360),
-		duration: (endNewYear - startNewYear) / MILLISECONDS_PER_DAY
+		start: parseInt(startNewYear + (-longitude + 180) * NaturalDate.MILLISECONDS_PER_DAY/360),
+		duration: (endNewYear - startNewYear) / NaturalDate.MILLISECONDS_PER_DAY
 	};
 	
 	yearContextCache.set(cacheKey, context);
@@ -56,6 +55,17 @@ const calculateYearContext = (artificialYear, longitude) => {
  * @class
  */
 export class NaturalDate {
+	/**
+	 * Number of milliseconds in a day
+	 * @constant {number}
+	 */
+	static MILLISECONDS_PER_DAY = 86400000; // 24 * 60 * 60 * 1000
+
+	/**
+	 * End date of the artificial time era (December 21, 2012 12:00 UTC)
+	 * @constant {number}
+	 */
+	static END_OF_ARTIFICIAL_TIME = Date.UTC(2012, 11, 21, 12, 0, 0);
 
 	unixTime; // Artificial gregorian date (UNIX timestamp)
 	longitude; // Longitude (between -180° to +180°)
@@ -104,16 +114,16 @@ export class NaturalDate {
 			let yearContext = calculateYearContext(date.getUTCFullYear()-1, longitude);
 			
 			// Correction if between the beginning of natural year and the end of the artificial year
-			if(this.unixTime - yearContext.start >= yearContext.duration * MILLISECONDS_PER_DAY)
+			if(this.unixTime - yearContext.start >= yearContext.duration * NaturalDate.MILLISECONDS_PER_DAY)
 				yearContext = calculateYearContext(date.getUTCFullYear(), longitude);
 			
 			this.yearStart = yearContext.start;
 			this.yearDuration = yearContext.duration;
 
-			let timeSinceLocalYearStart = (this.unixTime - this.yearStart) / MILLISECONDS_PER_DAY;
+			let timeSinceLocalYearStart = (this.unixTime - this.yearStart) / NaturalDate.MILLISECONDS_PER_DAY;
 
 			// YEAR
-			this.year = new Date(this.yearStart).getUTCFullYear() - new Date(END_OF_ARTIFICIAL_TIME).getUTCFullYear()+ 1;
+			this.year = new Date(this.yearStart).getUTCFullYear() - new Date(NaturalDate.END_OF_ARTIFICIAL_TIME).getUTCFullYear()+ 1;
 
 			// MOON
 			this.moon = parseInt(timeSinceLocalYearStart / 28) + 1; 
@@ -123,16 +133,16 @@ export class NaturalDate {
 			this.weekOfMoon = parseInt(timeSinceLocalYearStart / 7) % 4 + 1;
 			
 			// DAY
-			this.day = parseInt((this.unixTime - (END_OF_ARTIFICIAL_TIME + (-longitude + 180) * MILLISECONDS_PER_DAY/360)) / MILLISECONDS_PER_DAY);
+			this.day = parseInt((this.unixTime - (NaturalDate.END_OF_ARTIFICIAL_TIME + (-longitude + 180) * NaturalDate.MILLISECONDS_PER_DAY/360)) / NaturalDate.MILLISECONDS_PER_DAY);
 			this.dayOfYear = parseInt(timeSinceLocalYearStart) + 1;
 			this.dayOfMoon = parseInt(timeSinceLocalYearStart) % 28 + 1;
 			this.dayOfWeek = parseInt(timeSinceLocalYearStart) % 7 + 1;
 
 			// NADIR (i.e day start, midnight)
-			this.nadir = this.yearStart + parseInt(timeSinceLocalYearStart) * MILLISECONDS_PER_DAY;
+			this.nadir = this.yearStart + parseInt(timeSinceLocalYearStart) * NaturalDate.MILLISECONDS_PER_DAY;
 
 			// TIME
-			this.time = (this.unixTime - this.nadir) * 360 / MILLISECONDS_PER_DAY;
+			this.time = (this.unixTime - this.nadir) * 360 / NaturalDate.MILLISECONDS_PER_DAY;
 
 			// RAINBOW DAY
 			this.isRainbowDay = this.dayOfYear > 13*28;
@@ -153,10 +163,10 @@ export class NaturalDate {
 		event = new Date(event).getTime();
 
 		// Check if not out of range
-		if(event < this.nadir || event > this.nadir + MILLISECONDS_PER_DAY) 
+		if(event < this.nadir || event > this.nadir + NaturalDate.MILLISECONDS_PER_DAY) 
 			return false;
 
-		return (event - this.nadir) * (360 / MILLISECONDS_PER_DAY);
+		return (event - this.nadir) * (360 / NaturalDate.MILLISECONDS_PER_DAY);
 	}
 	
 	/**
