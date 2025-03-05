@@ -8,8 +8,10 @@ module.exports = {
   testEnvironment: 'node',
   verbose: true,
   collectCoverageFrom: [
-    'src/**/*.js',
-    '!src/**/*.test.js'
+    'index.js',
+    'context.js',
+    'utils/**/*.js',
+    '!**/*.test.js'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],

@@ -239,3 +239,6 @@ export class NaturalDate {
 		return String(this.dayOfMoon).padStart(2, '0');
 	}
 }
+
+// Export the cache for testing purposes
+export { yearContextCache };

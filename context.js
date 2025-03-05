@@ -277,6 +277,14 @@ export function NaturalMoonEvents(naturalDate, latitude) {
  * }} Solstice sun positions and mustache angle
  */
 export function MustachesRange(naturalDate, latitude) {
+    // Validate inputs
+    if (!isValidNaturalDate(naturalDate)) {
+        throwValidationError('naturalDate', naturalDate, 'NaturalDate instance');
+    }
+    if (!isValidLatitude(latitude)) {
+        throwValidationError('latitude', latitude, 'number between -90 and 90');
+    }
+    
     const cacheKey = `MUSTACHES_${naturalDate.year}_${latitude}`;
     
     try {

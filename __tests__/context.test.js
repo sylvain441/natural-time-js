@@ -14,10 +14,12 @@ import {
   NaturalSunEvents, 
   NaturalMoonPosition, 
   NaturalMoonEvents,
+  MustachesRange,
   HEMISPHERES,
   SEASONS,
   ANGLES
 } from '../context.js';
+import { Seasons } from 'astronomy-engine';
 
 describe('NaturalDateContext', () => {
   // Sample test locations
@@ -303,6 +305,147 @@ describe('NaturalDateContext', () => {
       expect(typeof moonEvents.moonrise === 'number' || moonEvents.moonrise === false).toBe(true);
       expect(typeof moonEvents.moonset === 'number' || moonEvents.moonset === false).toBe(true);
     });
+
+    test('should handle errors gracefully in NaturalMoonEvents', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: new Date().getTime(),
+        getTimeOfEvent: () => { throw new Error('Test error'); }
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalMoonEvents(mockDate, PARIS.latitude)).toThrow();
+    });
+  });
+
+  describe('MustachesRange', () => {
+    test('should calculate mustaches range correctly for Northern Hemisphere', () => {
+      const date = new NaturalDate(new Date(), PARIS.longitude);
+      const mustachesRange = MustachesRange(date, PARIS.latitude);
+      
+      // Verify the structure and types of the result
+      expect(typeof mustachesRange.winterSunrise).toBe('number');
+      expect(typeof mustachesRange.winterSunset).toBe('number');
+      expect(typeof mustachesRange.summerSunrise).toBe('number');
+      expect(typeof mustachesRange.summerSunset).toBe('number');
+      expect(typeof mustachesRange.averageMustacheAngle).toBe('number');
+      
+      // Verify the relationships between values for Northern Hemisphere
+      // In Northern Hemisphere, winter sunrise is later (higher angle) than summer sunrise
+      expect(mustachesRange.winterSunrise).toBeGreaterThan(mustachesRange.summerSunrise);
+      // In Northern Hemisphere, summer sunset is later (higher angle) than winter sunset
+      expect(mustachesRange.summerSunset).toBeGreaterThan(mustachesRange.winterSunset);
+      
+      // Verify the mustache angle is within expected range
+      expect(mustachesRange.averageMustacheAngle).toBeGreaterThanOrEqual(0);
+      expect(mustachesRange.averageMustacheAngle).toBeLessThanOrEqual(90);
+    });
+    
+    test('should calculate mustaches range correctly for Southern Hemisphere', () => {
+      const date = new NaturalDate(new Date(), SYDNEY.longitude);
+      const mustachesRange = MustachesRange(date, SYDNEY.latitude);
+      
+      // Verify the structure and types of the result
+      expect(typeof mustachesRange.winterSunrise).toBe('number');
+      expect(typeof mustachesRange.winterSunset).toBe('number');
+      expect(typeof mustachesRange.summerSunrise).toBe('number');
+      expect(typeof mustachesRange.summerSunset).toBe('number');
+      expect(typeof mustachesRange.averageMustacheAngle).toBe('number');
+      
+      // In Southern Hemisphere, the relationships are reversed
+      // In Southern Hemisphere, summer sunrise is later (higher angle) than winter sunrise
+      expect(mustachesRange.summerSunrise).toBeGreaterThan(mustachesRange.winterSunrise);
+      // In Southern Hemisphere, winter sunset is later (higher angle) than summer sunset
+      expect(mustachesRange.winterSunset).toBeGreaterThan(mustachesRange.summerSunset);
+      
+      // Verify the mustache angle is within expected range
+      expect(mustachesRange.averageMustacheAngle).toBeGreaterThanOrEqual(0);
+      expect(mustachesRange.averageMustacheAngle).toBeLessThanOrEqual(90);
+    });
+    
+    test('should handle caching correctly', () => {
+      const date = new NaturalDate(new Date(), PARIS.longitude);
+      
+      // First call should calculate values
+      const firstCall = MustachesRange(date, PARIS.latitude);
+      
+      // Second call should use cached values
+      const secondCall = MustachesRange(date, PARIS.latitude);
+      
+      // Both calls should return the same values
+      expect(secondCall).toEqual(firstCall);
+    });
+    
+    test('should handle equator correctly', () => {
+      const date = new NaturalDate(new Date(), EQUATOR.longitude);
+      const mustachesRange = MustachesRange(date, EQUATOR.latitude);
+      
+      // At the equator, the difference between summer and winter is minimal
+      // The mustache angle should be close to 0
+      expect(mustachesRange.averageMustacheAngle).toBeLessThan(10);
+    });
+
+    test('should throw error for invalid NaturalDate', () => {
+      // Test with null date
+      expect(() => NaturalSunAltitude(null, 0)).toThrow();
+      expect(() => NaturalSunEvents(null, 0)).toThrow();
+      expect(() => NaturalMoonPosition(null, 0)).toThrow();
+      expect(() => NaturalMoonEvents(null, 0)).toThrow();
+      expect(() => MustachesRange(null, 0)).toThrow();
+      
+      // Test with invalid object (not a NaturalDate)
+      expect(() => NaturalSunAltitude({}, 0)).toThrow();
+      expect(() => NaturalSunEvents({}, 0)).toThrow();
+      expect(() => NaturalMoonPosition({}, 0)).toThrow();
+      expect(() => NaturalMoonEvents({}, 0)).toThrow();
+      expect(() => MustachesRange({}, 0)).toThrow();
+    });
+
+    test('should handle errors gracefully in NaturalMoonEvents', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: new Date().getTime(),
+        getTimeOfEvent: () => { throw new Error('Test error'); }
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalMoonEvents(mockDate, PARIS.latitude)).toThrow();
+    });
+
+    test('should handle errors gracefully in NaturalMoonPosition', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: 'invalid nadir value' // This will cause an error
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalMoonPosition(mockDate, PARIS.latitude)).toThrow();
+    });
+
+    test('should handle errors gracefully in NaturalSunEvents', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: 'invalid nadir value' // This will cause an error
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalSunEvents(mockDate, PARIS.latitude)).toThrow();
+    });
+
+    test('should handle errors gracefully in NaturalSunAltitude', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: 'invalid nadir value' // This will cause an error
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalSunAltitude(mockDate, PARIS.latitude)).toThrow();
+    });
   });
 
   describe('Constants', () => {
@@ -339,18 +482,49 @@ describe('NaturalDateContext', () => {
       expect(() => NaturalMoonEvents(date, -91)).toThrow();
     });
 
-    test('should throw error for invalid NaturalDate', () => {
-      // Test with null date
-      expect(() => NaturalSunAltitude(null, 0)).toThrow();
-      expect(() => NaturalSunEvents(null, 0)).toThrow();
-      expect(() => NaturalMoonPosition(null, 0)).toThrow();
-      expect(() => NaturalMoonEvents(null, 0)).toThrow();
+    test('should handle errors gracefully in NaturalMoonEvents', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: new Date().getTime(),
+        getTimeOfEvent: () => { throw new Error('Test error'); }
+      };
       
-      // Test with invalid object (not a NaturalDate)
-      expect(() => NaturalSunAltitude({}, 0)).toThrow();
-      expect(() => NaturalSunEvents({}, 0)).toThrow();
-      expect(() => NaturalMoonPosition({}, 0)).toThrow();
-      expect(() => NaturalMoonEvents({}, 0)).toThrow();
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalMoonEvents(mockDate, PARIS.latitude)).toThrow();
+    });
+
+    test('should handle errors gracefully in NaturalMoonPosition', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: 'invalid nadir value' // This will cause an error
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalMoonPosition(mockDate, PARIS.latitude)).toThrow();
+    });
+
+    test('should handle errors gracefully in NaturalSunEvents', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: 'invalid nadir value' // This will cause an error
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalSunEvents(mockDate, PARIS.latitude)).toThrow();
+    });
+
+    test('should handle errors gracefully in NaturalSunAltitude', () => {
+      // Create a mock NaturalDate that will cause an error in the calculation
+      const mockDate = {
+        unixTime: new Date().getTime(),
+        nadir: 'invalid nadir value' // This will cause an error
+      };
+      
+      // The function should throw an error because mockDate is not a valid NaturalDate
+      expect(() => NaturalSunAltitude(mockDate, PARIS.latitude)).toThrow();
     });
   });
 });
