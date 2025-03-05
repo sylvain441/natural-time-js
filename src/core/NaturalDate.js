@@ -241,4 +241,4 @@ export class NaturalDate {
 }
 
 // Export the cache for testing purposes
-export { yearContextCache };
+export { yearContextCache }; 

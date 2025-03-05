@@ -3,7 +3,7 @@
  * @description Validation utilities for natural time calculations
  */
 
-import { NaturalDate } from '../index.js';
+import { NaturalDate } from '../core/NaturalDate.js';
 
 const LATITUDE_RANGE = { MIN: -90, MAX: 90 };
 const LONGITUDE_RANGE = { MIN: -180, MAX: 180 };

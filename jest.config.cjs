@@ -1,25 +1,21 @@
 module.exports = {
   transform: {
-    '^.+\\.js$': 'babel-jest'
-  },
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^.+\\.jsx?$': 'babel-jest',
   },
   testEnvironment: 'node',
-  verbose: true,
+  testMatch: [
+    '**/__tests__/**/*.test.js',
+    '**/src/**/__tests__/**/*.test.js'
+  ],
+  moduleNameMapper: {
+    '^src/(.*)$': '<rootDir>/src/$1'
+  },
   collectCoverageFrom: [
-    'index.js',
-    'context.js',
-    'utils/**/*.js',
-    '!**/*.test.js'
+    'src/**/*.js',
+    '!src/index.js',
+    '!**/node_modules/**',
+    '!**/dist/**'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov'],
-  testMatch: [
-    '**/__tests__/**/*.js',
-    '**/?(*.)+(spec|test).js'
-  ],
-  transformIgnorePatterns: [
-    'node_modules/(?!(astronomy-engine)/)'
-  ]
+  verbose: true,
 }; 

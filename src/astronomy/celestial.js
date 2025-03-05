@@ -1,16 +1,16 @@
 /**
- * @module context
+ * @module celestial
  * @description Provides astronomical calculations and events for natural time, including sun and moon positions
  */
 
-import { NaturalDate } from './index.js';
+import { NaturalDate } from '../core/NaturalDate.js';
 import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon, Seasons } from 'astronomy-engine';
 import { 
     isValidLatitude, 
     isValidLongitude, 
     isValidNaturalDate, 
     throwValidationError 
-} from './utils/validators.js';
+} from '../utils/validators.js';
 
 /**
  * Hemisphere identifiers for geographical calculations
@@ -256,7 +256,7 @@ export function NaturalMoonEvents(naturalDate, latitude) {
         astroCache.set(cacheKey, events);
         return events;
     } catch (error) {
-        console.error('Error calculating moon events:', error);
+        console.error('Error in NaturalMoonEvents:', error);
         return {
             moonrise: null,
             moonset: null
@@ -269,68 +269,71 @@ export function NaturalMoonEvents(naturalDate, latitude) {
  * @param {NaturalDate} naturalDate - Natural date instance
  * @param {number} latitude - Latitude in degrees (-90 to 90)
  * @returns {{
- *   winterSunrise: number,
- *   winterSunset: number,
- *   summerSunrise: number,
- *   summerSunset: number,
- *   averageMustacheAngle: number
- * }} Solstice sun positions and mustache angle
- */
+*   winterSunrise: number,
+*   winterSunset: number,
+*   summerSunrise: number,
+*   summerSunset: number,
+*   averageMustacheAngle: number
+* }} Solstice sun positions and mustache angle
+*/
 export function MustachesRange(naturalDate, latitude) {
-    // Validate inputs
-    if (!isValidNaturalDate(naturalDate)) {
-        throwValidationError('naturalDate', naturalDate, 'NaturalDate instance');
-    }
-    if (!isValidLatitude(latitude)) {
-        throwValidationError('latitude', latitude, 'number between -90 and 90');
-    }
-    
-    const cacheKey = `MUSTACHES_${naturalDate.year}_${latitude}`;
-    
-    try {
-        if (astroCache.has(cacheKey)) {
-            return astroCache.get(cacheKey);
-        }
+   // Validate inputs
+   if (!isValidNaturalDate(naturalDate)) {
+       throwValidationError('naturalDate', naturalDate, 'NaturalDate instance');
+   }
+   if (!isValidLatitude(latitude)) {
+       throwValidationError('latitude', latitude, 'number between -90 and 90');
+   }
+   
+   const cacheKey = `MUSTACHES_${naturalDate.year}_${latitude}`;
+   
+   try {
+       if (astroCache.has(cacheKey)) {
+           return astroCache.get(cacheKey);
+       }
 
-        const currentYear = new Date(naturalDate.unixTime).getFullYear();
-        const currentSeasons = Seasons(currentYear);
-        
-        const winterSolsticeSunEvents = NaturalSunEvents(
-            new NaturalDate(currentSeasons.dec_solstice.date, 0), 
-            latitude
-        );
-        const summerSolsticeSunEvents = NaturalSunEvents(
-            new NaturalDate(currentSeasons.jun_solstice.date, 0), 
-            latitude
-        );
+       const currentYear = new Date(naturalDate.unixTime).getFullYear();
+       const currentSeasons = Seasons(currentYear);
+       
+       const winterSolsticeSunEvents = NaturalSunEvents(
+           new NaturalDate(currentSeasons.dec_solstice.date, 0), 
+           latitude
+       );
+       const summerSolsticeSunEvents = NaturalSunEvents(
+           new NaturalDate(currentSeasons.jun_solstice.date, 0), 
+           latitude
+       );
 
-        const averageMustacheAngle = Math.min(Math.max(
-            latitude >= 0 
-                ? (winterSolsticeSunEvents.sunrise - summerSolsticeSunEvents.sunrise + 
-                   summerSolsticeSunEvents.sunset - winterSolsticeSunEvents.sunset) / 4
-                : (summerSolsticeSunEvents.sunrise - winterSolsticeSunEvents.sunrise + 
-                   winterSolsticeSunEvents.sunset - summerSolsticeSunEvents.sunset) / 4,
-            0
-        ), 90);
+       const averageMustacheAngle = Math.min(Math.max(
+           latitude >= 0 
+               ? (winterSolsticeSunEvents.sunrise - summerSolsticeSunEvents.sunrise + 
+                  summerSolsticeSunEvents.sunset - winterSolsticeSunEvents.sunset) / 4
+               : (summerSolsticeSunEvents.sunrise - winterSolsticeSunEvents.sunrise + 
+                  winterSolsticeSunEvents.sunset - summerSolsticeSunEvents.sunset) / 4,
+           0
+       ), 90);
 
-        const result = {
-            winterSunrise: winterSolsticeSunEvents.sunrise,
-            winterSunset: winterSolsticeSunEvents.sunset,
-            summerSunrise: summerSolsticeSunEvents.sunrise,
-            summerSunset: summerSolsticeSunEvents.sunset,
-            averageMustacheAngle
-        };
+       const result = {
+           winterSunrise: winterSolsticeSunEvents.sunrise,
+           winterSunset: winterSolsticeSunEvents.sunset,
+           summerSunrise: summerSolsticeSunEvents.sunrise,
+           summerSunset: summerSolsticeSunEvents.sunset,
+           averageMustacheAngle
+       };
 
-        astroCache.set(cacheKey, result);
-        return result;
-    } catch (error) {
-        console.error('Error calculating mustaches range:', error);
-        return {
-            winterSunrise: 0,
-            winterSunset: 0,
-            summerSunrise: 0,
-            summerSunset: 0,
-            averageMustacheAngle: 0
-        }
-    }
+       astroCache.set(cacheKey, result);
+       return result;
+   } catch (error) {
+       console.error('Error calculating mustaches range:', error);
+       return {
+           winterSunrise: 0,
+           winterSunset: 0,
+           summerSunrise: 0,
+           summerSunset: 0,
+           averageMustacheAngle: 0
+       }
+   }
 }
+
+// Export the cache for testing purposes
+export { astroCache };

@@ -8,8 +8,8 @@
  * - Time is calculated directly from astronomical position, not converted from conventional time
  */
 
-import { NaturalDate } from '../index.js';
 import { 
+  NaturalDate,
   NaturalSunAltitude, 
   NaturalSunEvents, 
   NaturalMoonPosition, 
@@ -18,7 +18,7 @@ import {
   HEMISPHERES,
   SEASONS,
   ANGLES
-} from '../context.js';
+} from '../../../src/index.js';
 import { Seasons } from 'astronomy-engine';
 
 describe('NaturalDateContext', () => {

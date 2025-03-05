@@ -91,6 +91,9 @@ out
 .nuxt
 dist
 
+# Documentation
+docs
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and not Next.js
@@ -128,3 +131,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Performance summary when running tests
+performance-summary.txt
