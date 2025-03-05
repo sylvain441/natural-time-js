@@ -227,6 +227,14 @@ export function NaturalMoonPosition(naturalDate, latitude) {
  * }} Moon events in natural degrees (0-360)
  */
 export function NaturalMoonEvents(naturalDate, latitude) {
+    // Validate inputs
+    if (!isValidNaturalDate(naturalDate)) {
+        throwValidationError('naturalDate', naturalDate, 'NaturalDate instance');
+    }
+    if (!isValidLatitude(latitude)) {
+        throwValidationError('latitude', latitude, 'number between -90 and 90');
+    }
+    
     const cacheKey = `MOON_${naturalDate.toDateString()}_${latitude}_${naturalDate.longitude}`;
     
     try {
