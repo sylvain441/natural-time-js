@@ -1,0 +1,56 @@
+{
+  "plugins": ["plugins/markdown"],
+  "recurseDepth": 10,
+  "source": {
+    "include": ["src"],
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "sourceType": "module",
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "default": {
+      "outputSourceFiles": true,
+      "includeDate": false
+    },
+    "cleanJSDoc": {
+      "name": "Natural Time JS",
+      "footerText": "Natural Time JS - A JavaScript library for natural time calculations",
+      "title": "Natural Time JS Documentation",
+      "meta": [
+        {
+          "name": "description",
+          "content": "Documentation for Natural Time JS - A JavaScript library for natural time calculations"
+        }
+      ],
+      "search": true,
+      "menu": {
+        "GitHub": {
+          "href": "https://github.com/sylvain441/natural-time-js",
+          "target": "_blank",
+          "class": "menu-item",
+          "id": "github_link"
+        },
+        "Website": {
+          "href": "https://naturaltime.app",
+          "target": "_blank",
+          "class": "menu-item",
+          "id": "website_link"
+        }
+      }
+    }
+  },
+  "opts": {
+    "destination": "./docs",
+    "encoding": "utf8",
+    "private": true,
+    "recurse": true,
+    "template": "node_modules/clean-jsdoc-theme",
+    "mainpagetitle": "Natural Time JS Documentation"
+  }
+} 
