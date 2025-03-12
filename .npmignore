@@ -1,0 +1,42 @@
+# Source files
+src/
+
+# Tests
+__tests__/
+*.test.ts
+*.test.js
+
+# Development configs
+tsconfig.json
+jest.config.js
+jsdoc.json
+
+# Documentation source
+docs/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Git files
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.gitlab/
+
+# Logs and caches
+*.log
+.cache/
+coverage/
+.nyc_output/
+
+# Development tools
+.eslintrc
+.prettierrc
+.editorconfig
+
+# Performance reports
+performance-summary.txt 
