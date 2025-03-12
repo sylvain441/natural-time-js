@@ -1,7 +1,6 @@
 /**
  * @module natural-time-js
- * @description Natural time is a fresh, elegant, and coherent way of measuring the movements of time 
- here on the Earth.
+ * @description Natural time is a fresh, elegant, and coherent way of measuring the movements of time here on the Earth.
  * This new time standard is based on common sense and the observation of natural cycles.
  * Our current Gregorian calendar is an artificial construct disconnected from natural cycles.
  * Natural time realigns us with the observable patterns of the cosmos:
@@ -23,7 +22,7 @@
  * 
  * ## Basic Usage
  * 
- * ```javascript
+ * ```typescript
  * import { NaturalDate } from 'natural-time-js';
  * 
  * // Create a natural date for the current time at longitude 0
@@ -44,7 +43,7 @@
  * 
  * The library provides astronomical functions for calculating sun and moon positions:
  * 
- * ```javascript
+ * ```typescript
  * import { NaturalDate, NaturalSunEvents, NaturalMoonPosition } from 'natural-time-js';
  * 
  * const naturalDate = new NaturalDate(new Date(), 0);
@@ -66,7 +65,7 @@
  */
 
 // Export the core NaturalDate class
-export { NaturalDate, yearContextCache } from './core/NaturalDate.js';
+export { NaturalDate, yearContextCache } from './core/NaturalDate';
 
 /**
  * Astronomical functions and constants for natural time calculations
@@ -79,9 +78,8 @@ export {
     MustachesRange,
     HEMISPHERES,
     SEASONS,
-    ANGLES,
-    astroCache
-} from './astronomy/celestial.js';
+    ANGLES
+} from './astronomy/celestial';
 
 /**
  * Utility functions for validation and error handling
@@ -94,4 +92,4 @@ export {
     isValidNaturalDate,
     isValidCacheKey,
     throwValidationError
-} from './utils/validators.js'; 
+} from './utils/validators'; 

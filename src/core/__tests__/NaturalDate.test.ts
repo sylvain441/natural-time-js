@@ -9,13 +9,8 @@
  */
 
 import { 
-  NaturalDate,
-  NaturalSunAltitude, 
-  NaturalSunEvents, 
-  NaturalMoonPosition, 
-  NaturalMoonEvents,
-  HEMISPHERES
-} from '../../../src/index.js';
+  NaturalDate
+} from '../../../src/index';
 
 describe('NaturalDate', () => {
   // Constants for testing

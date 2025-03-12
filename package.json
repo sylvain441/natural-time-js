@@ -2,14 +2,18 @@
   "name": "natural-time-js",
   "version": "1.1.1",
   "description": "Natural time is a fresh, elegant, and coherent way of measuring the movements of time here on the Earth. This new time standard is based on common sense and the observation of natural cycles. Learn more: https://naturaltime.app. This JavaScript Class translates gregorian artificial datetime to natural datetime",
-  "main": "src/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "docs": "jsdoc -c jsdoc.json",
-    "docs:dev": "jsdoc -c jsdoc.json -w"
+    "docs:dev": "jsdoc -c jsdoc.json -w",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -34,9 +38,13 @@
   "devDependencies": {
     "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.9",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.9",
     "babel-jest": "^29.7.0",
     "clean-jsdoc-theme": "^4.3.0",
     "jest": "^29.7.0",
-    "jsdoc": "^4.0.4"
+    "jsdoc": "^4.0.4",
+    "ts-jest": "^29.2.6",
+    "typescript": "^5.8.2"
   }
 }

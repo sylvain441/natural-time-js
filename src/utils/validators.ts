@@ -5,34 +5,34 @@
  * ensuring that values are within acceptable ranges and of the correct types.
  */
 
-import { NaturalDate } from '../core/NaturalDate.js';
+import { NaturalDate } from '../core/NaturalDate';
 
 /**
  * Valid range for latitude values in degrees
- * @constant
- * @private
  */
-const LATITUDE_RANGE = { MIN: -90, MAX: 90 };
+const LATITUDE_RANGE = {
+    MIN: -90,
+    MAX: 90
+} as const;
 
 /**
  * Valid range for longitude values in degrees
- * @constant
- * @private
  */
-const LONGITUDE_RANGE = { MIN: -180, MAX: 180 };
+const LONGITUDE_RANGE = {
+    MIN: -180,
+    MAX: 180
+} as const;
 
 /**
  * Valid range for angle values in degrees
- * @constant
- * @private
  */
-const ANGLE_RANGE = { MIN: 0, MAX: 360 };
+const ANGLE_RANGE = {
+    MIN: 0,
+    MAX: 360
+} as const;
 
 /**
  * Valid ranges for natural date components
- * These ranges define the valid values for different components of a natural date
- * @constant
- * @private
  */
 const NATURAL_DATE_RANGES = {
     /** Moon (month) number range (1-14) */
@@ -45,7 +45,7 @@ const NATURAL_DATE_RANGES = {
     DAY_OF_MOON: { MIN: 1, MAX: 28 },
     /** Day of week range (1-7) */
     DAY_OF_WEEK: { MIN: 1, MAX: 7 }
-};
+} as const;
 
 /**
  * Validates if a value is a finite number.
@@ -53,8 +53,8 @@ const NATURAL_DATE_RANGES = {
  * This is a utility function that checks if a value is a valid number
  * (not NaN, not Infinity, and actually a number type).
  * 
- * @param {*} value - Value to validate
- * @returns {boolean} True if value is a valid number
+ * @param value - Value to validate
+ * @returns True if value is a valid number
  * 
  * @example
  * isValidNumber(42); // true
@@ -62,7 +62,7 @@ const NATURAL_DATE_RANGES = {
  * isValidNumber(NaN); // false
  * isValidNumber(Infinity); // false
  */
-export const isValidNumber = (value) => {
+export const isValidNumber = (value: unknown): value is number => {
     return typeof value === 'number' && Number.isFinite(value) && !Number.isNaN(value);
 };
 
@@ -71,8 +71,8 @@ export const isValidNumber = (value) => {
  * 
  * Latitude must be a number between -90° (South Pole) and 90° (North Pole).
  * 
- * @param {number} latitude - Latitude in degrees to validate
- * @returns {boolean} True if latitude is valid
+ * @param latitude - Latitude in degrees to validate
+ * @returns True if latitude is valid
  * 
  * @example
  * isValidLatitude(45.5); // true
@@ -80,7 +80,7 @@ export const isValidNumber = (value) => {
  * isValidLatitude(90); // true (North Pole)
  * isValidLatitude(91); // false (out of range)
  */
-export const isValidLatitude = (latitude) => {
+export const isValidLatitude = (latitude: unknown): latitude is number => {
     return isValidNumber(latitude) && 
            latitude >= LATITUDE_RANGE.MIN && 
            latitude <= LATITUDE_RANGE.MAX;
@@ -94,8 +94,8 @@ export const isValidLatitude = (latitude) => {
  * - Positive values are East longitude
  * - Negative values are West longitude
  * 
- * @param {number} longitude - Longitude in degrees to validate
- * @returns {boolean} True if longitude is valid
+ * @param longitude - Longitude in degrees to validate
+ * @returns True if longitude is valid
  * 
  * @example
  * isValidLongitude(0); // true (Prime Meridian)
@@ -103,7 +103,7 @@ export const isValidLatitude = (latitude) => {
  * isValidLongitude(-180); // true (International Date Line)
  * isValidLongitude(181); // false (out of range)
  */
-export const isValidLongitude = (longitude) => {
+export const isValidLongitude = (longitude: unknown): longitude is number => {
     return isValidNumber(longitude) && 
            longitude >= LONGITUDE_RANGE.MIN && 
            longitude <= LONGITUDE_RANGE.MAX;
@@ -116,8 +116,8 @@ export const isValidLongitude = (longitude) => {
  * representing a full circle. This is used for time of day and
  * celestial positions.
  * 
- * @param {number} angle - Angle in degrees to validate
- * @returns {boolean} True if angle is valid
+ * @param angle - Angle in degrees to validate
+ * @returns True if angle is valid
  * 
  * @example
  * isValidAngle(180); // true (half circle)
@@ -126,7 +126,7 @@ export const isValidLongitude = (longitude) => {
  * isValidAngle(361); // false (out of range)
  * isValidAngle(-1); // false (out of range)
  */
-export const isValidAngle = (angle) => {
+export const isValidAngle = (angle: unknown): angle is number => {
     return isValidNumber(angle) && 
            angle >= ANGLE_RANGE.MIN && 
            angle <= ANGLE_RANGE.MAX;
@@ -139,15 +139,15 @@ export const isValidAngle = (angle) => {
  * January 1, 1970, 00:00:00 UTC (the Unix epoch).
  * Valid timestamps must be positive numbers.
  * 
- * @param {number} timestamp - Unix timestamp in milliseconds
- * @returns {boolean} True if timestamp is valid
+ * @param timestamp - Unix timestamp in milliseconds
+ * @returns True if timestamp is valid
  * 
  * @example
  * isValidTimestamp(Date.now()); // true
  * isValidTimestamp(0); // false (Unix epoch exactly)
  * isValidTimestamp(-1); // false (before Unix epoch)
  */
-export const isValidTimestamp = (timestamp) => {
+export const isValidTimestamp = (timestamp: unknown): timestamp is number => {
     return isValidNumber(timestamp) && timestamp > 0;
 };
 
@@ -158,8 +158,8 @@ export const isValidTimestamp = (timestamp) => {
  * verifying that all properties are present and within valid ranges.
  * It's used to ensure that only valid NaturalDate objects are used in calculations.
  * 
- * @param {*} date - Value to validate
- * @returns {boolean} True if value is a valid NaturalDate instance
+ * @param date - Value to validate
+ * @returns True if value is a valid NaturalDate instance
  * 
  * @example
  * const naturalDate = new NaturalDate(new Date(), 0);
@@ -168,7 +168,7 @@ export const isValidTimestamp = (timestamp) => {
  * isValidNaturalDate({}); // false (not a NaturalDate instance)
  * isValidNaturalDate(null); // false
  */
-export const isValidNaturalDate = (date) => {
+export const isValidNaturalDate = (date: unknown): date is NaturalDate => {
     if (!(date instanceof NaturalDate)) {
         return false;
     }
@@ -220,15 +220,15 @@ export const isValidNaturalDate = (date) => {
  * Cache keys are used for storing and retrieving calculated values
  * to improve performance. Valid keys must be non-empty strings.
  * 
- * @param {string} key - Cache key to validate
- * @returns {boolean} True if key is valid
+ * @param key - Cache key to validate
+ * @returns True if key is valid
  * 
  * @example
  * isValidCacheKey('SUN_2023_45.5_0'); // true
  * isValidCacheKey(''); // false (empty string)
  * isValidCacheKey(123); // false (not a string)
  */
-export const isValidCacheKey = (key) => {
+export const isValidCacheKey = (key: unknown): key is string => {
     return typeof key === 'string' && key.length > 0;
 };
 
@@ -238,9 +238,9 @@ export const isValidCacheKey = (key) => {
  * This utility function creates consistent error messages for validation failures,
  * making it easier to identify and fix issues with invalid inputs.
  * 
- * @param {string} paramName - Name of the invalid parameter
- * @param {*} value - Invalid value
- * @param {string} expectedType - Description of expected type/format
+ * @param paramName - Name of the invalid parameter
+ * @param value - Invalid value
+ * @param expectedType - Description of expected type/format
  * @throws {Error} Formatted validation error
  * 
  * @example
@@ -248,9 +248,6 @@ export const isValidCacheKey = (key) => {
  * throwValidationError('latitude', 95, 'number between -90 and 90');
  * // Throws: "Error: Invalid latitude: 95. Expected number between -90 and 90"
  */
-export const throwValidationError = (paramName, value, expectedType) => {
-    throw new Error(
-        `Invalid ${paramName}: ${value}. ` +
-        `Expected ${expectedType}`
-    );
+export const throwValidationError = (paramName: string, value: unknown, expectedType: string): never => {
+    throw new Error(`Invalid ${paramName}: ${value}. Expected ${expectedType}`);
 }; 
