@@ -281,10 +281,10 @@ export class NaturalDate {
      * @param rounding - Rounding increment for time (default: 1)
      * @returns Formatted time string
      */
-    toTimeString(decimals: number = 2, rounding: number = 1): string {
+    toTimeString(decimals: number = 2, rounding: number = 0.01): string {
         let time = this.time;
         
-        // Round to the nearest increment
+        // Round to the nearest decimal increment
         if (rounding > 0) {
             time = Math.round(time / rounding) * rounding;
             
