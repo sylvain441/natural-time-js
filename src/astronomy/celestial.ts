@@ -104,6 +104,14 @@ interface MustachesRange {
 const astroCache: Map<string, SunEvents | MoonEvents | MustachesRange> = new Map();
 
 /**
+ * Clears the internal astronomy cache.
+ * Exposed for testing or advanced usage without exposing the cache itself.
+ */
+export function resetAstronomyCache(): void {
+    astroCache.clear();
+}
+
+/**
  * Determines the hemisphere based on latitude.
  */
 const getHemisphere = (latitude: number): HEMISPHERES => 
@@ -147,7 +155,6 @@ export function NaturalSunAltitude(naturalDate: NaturalDate, latitude: number): 
             highestAltitude: SearchHourAngle(Body.Sun, observer, 0, new Date(naturalDate.nadir)).hor.altitude
         };
     } catch (error) {
-        console.error('Error in NaturalSunAltitude:', error);
         throw error;
     }
 }
@@ -196,7 +203,6 @@ export function NaturalSunEvents(naturalDate: NaturalDate, latitude: number): Su
         astroCache.set(cacheKey, events);
         return events;
     } catch (error) {
-        console.error('Error in NaturalSunEvents:', error);
         throw error;
     }
 }
@@ -224,7 +230,6 @@ export function NaturalMoonPosition(naturalDate: NaturalDate, latitude: number):
             illumination: Math.cos(MoonPhase(date) * Math.PI / 180)
         };
     } catch (error) {
-        console.error('Error in NaturalMoonPosition:', error);
         throw error;
     }
 }
@@ -267,7 +272,6 @@ export function NaturalMoonEvents(naturalDate: NaturalDate, latitude: number): M
         astroCache.set(cacheKey, events);
         return events;
     } catch (error) {
-        console.error('Error in NaturalMoonEvents:', error);
         throw error;
     }
 }
@@ -324,7 +328,6 @@ export function MustachesRange(naturalDate: NaturalDate, latitude: number): Must
         astroCache.set(cacheKey, result);
         return result;
     } catch (error) {
-        console.error('Error calculating mustaches range:', error);
         return {
             winterSunrise: 0,
             winterSunset: 0,

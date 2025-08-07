@@ -32,6 +32,16 @@
     "url": "https://github.com/sylvain441/natural-time-js/issues"
   },
   "homepage": "https://github.com/sylvain441/natural-time-js#readme",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
   "dependencies": {
     "astronomy-engine": "^2.1.19"
   },

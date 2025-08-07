@@ -61,11 +61,11 @@
  * 
  * @author Sylvain 441
  * @license CC0-1.0
- * @version 1.1.1
+ * @version 2.0.2
  */
 
 // Export the core NaturalDate class
-export { NaturalDate, yearContextCache } from './core/NaturalDate';
+export { NaturalDate, resetYearContextCache } from './core/NaturalDate';
 
 /**
  * Astronomical functions and constants for natural time calculations
@@ -80,6 +80,20 @@ export {
     SEASONS,
     ANGLES
 } from './astronomy/celestial';
+
+export { resetAstronomyCache } from './astronomy/celestial';
+
+/**
+ * Resets all internal caches used by the library.
+ */
+export function resetCaches(): void {
+    // These functions are exported from their modules, but we need to reference
+    // them here to avoid relying on global names.
+    const resetCore = require('./core/NaturalDate').resetYearContextCache as () => void;
+    const resetAstro = require('./astronomy/celestial').resetAstronomyCache as () => void;
+    resetCore();
+    resetAstro();
+}
 
 /**
  * Utility functions for validation and error handling

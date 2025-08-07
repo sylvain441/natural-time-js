@@ -357,4 +357,10 @@ export class NaturalDate {
     }
 }
 
-export { yearContextCache }; 
+/**
+ * Clears the internal year context cache.
+ * Exposed for testing or advanced usage without exposing the cache itself.
+ */
+export function resetYearContextCache(): void {
+    yearContextCache.clear();
+}
