@@ -5,7 +5,7 @@
  * ensuring that values are within acceptable ranges and of the correct types.
  */
 
-import { NaturalDate } from '../core/NaturalDate';
+import { NaturalDate } from '../core/NaturalDate.js';
 
 /**
  * Valid range for latitude values in degrees

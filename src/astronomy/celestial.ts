@@ -10,14 +10,14 @@
  * - Location-aware sunrise, sunset, moonrise and moonset times
  */
 
-import { NaturalDate } from '../core/NaturalDate';
+import { NaturalDate } from '../core/NaturalDate.js';
 import { Body, Observer, SearchHourAngle, SearchRiseSet, SearchAltitude, MoonPhase, Equator, Horizon, Seasons } from 'astronomy-engine';
 import { 
     isValidLatitude, 
     isValidLongitude, 
     isValidNaturalDate, 
     throwValidationError 
-} from '../utils/validators';
+} from '../utils/validators.js';
 
 /**
  * Hemisphere identifiers for geographical calculations.

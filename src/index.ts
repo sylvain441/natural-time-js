@@ -64,8 +64,11 @@
  * @version 2.0.2
  */
 
+import { resetYearContextCache } from './core/NaturalDate.js';
+import { resetAstronomyCache } from './astronomy/celestial.js';
+
 // Export the core NaturalDate class
-export { NaturalDate, resetYearContextCache } from './core/NaturalDate';
+export { NaturalDate, resetYearContextCache } from './core/NaturalDate.js';
 
 /**
  * Astronomical functions and constants for natural time calculations
@@ -79,20 +82,17 @@ export {
     HEMISPHERES,
     SEASONS,
     ANGLES
-} from './astronomy/celestial';
+} from './astronomy/celestial.js';
 
-export { resetAstronomyCache } from './astronomy/celestial';
+export { resetAstronomyCache };
 
 /**
  * Resets all internal caches used by the library.
  */
 export function resetCaches(): void {
-    // These functions are exported from their modules, but we need to reference
-    // them here to avoid relying on global names.
-    const resetCore = require('./core/NaturalDate').resetYearContextCache as () => void;
-    const resetAstro = require('./astronomy/celestial').resetAstronomyCache as () => void;
-    resetCore();
-    resetAstro();
+    // Directly call the exported reset functions to clear caches
+    resetYearContextCache();
+    resetAstronomyCache();
 }
 
 /**
@@ -106,4 +106,8 @@ export {
     isValidNaturalDate,
     isValidCacheKey,
     throwValidationError
-} from './utils/validators'; 
+} from './utils/validators.js'; 
+// NOTE: Consumers using Node ESM require explicit .js extensions for relative imports.
+// Keep all internal re-exports using the ".js" suffix to ensure SSR compatibility.
+// NOTE: Consumers using Node ESM require explicit .js extensions for relative imports.
+// Keep all internal re-exports using the ".js" suffix to ensure SSR compatibility.
