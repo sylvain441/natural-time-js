@@ -134,3 +134,6 @@ docs
 
 # Performance summary when running tests
 performance-summary.txt
+
+# vectors
+vectors/

@@ -13,7 +13,8 @@
     "test:coverage": "jest --coverage",
     "docs": "jsdoc -c jsdoc.json",
     "docs:dev": "jsdoc -c jsdoc.json -w",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "vectors": "node scripts/generate_golden_vectors.mjs"
   },
   "repository": {
     "type": "git",
