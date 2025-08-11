@@ -3,7 +3,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { NaturalDate, NaturalSunEvents, NaturalMoonPosition, NaturalMoonEvents, MustachesRange } from '../dist/index.js';
+import { NaturalDate, NaturalSunEvents, NaturalSunAltitude, NaturalMoonPosition, NaturalMoonEvents, MustachesRange } from '../dist/index.js';
 import { Seasons } from 'astronomy-engine';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -69,11 +69,16 @@ function sunEventsToExpected(events) {
   };
 }
 
+function sunAltitudeToExpected(sa) {
+  return {
+    sun_altitude: sa.altitude
+  };
+}
+
 function moonPositionToExpected(mp) {
   return {
     altitude: mp.altitude,
     phase_deg: mp.phase,
-    illumination: mp.illumination
   };
 }
 
@@ -192,6 +197,7 @@ async function main() {
           try {
           const nd = new NaturalDate(unix_ms_utc, longitude);
           const sun = NaturalSunEvents(nd, latitude);
+          const sunAlt = NaturalSunAltitude(nd, latitude);
           const mp = NaturalMoonPosition(nd, latitude);
           const me = NaturalMoonEvents(nd, latitude);
           const must = MustachesRange(nd, latitude);
@@ -202,6 +208,7 @@ async function main() {
               expect: {
                 ...naturalDateToExpected(nd),
               ...sunEventsToExpected(sun),
+              ...sunAltitudeToExpected(sunAlt),
               ...moonPositionToExpected(mp),
               ...moonEventsToExpected(me),
               ...mustachesToExpected(must)

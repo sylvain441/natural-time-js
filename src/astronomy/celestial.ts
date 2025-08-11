@@ -75,7 +75,6 @@ interface SunEvents {
 interface MoonPosition {
     altitude: number;
     phase: number;
-    illumination: number;
 }
 
 /**
@@ -227,7 +226,6 @@ export function NaturalMoonPosition(naturalDate: NaturalDate, latitude: number):
         return {
             altitude: Math.max(Horizon(date, observer, moon.ra, moon.dec).altitude, 0),
             phase: MoonPhase(date),
-            illumination: Math.cos(MoonPhase(date) * Math.PI / 180)
         };
     } catch (error) {
         throw error;
