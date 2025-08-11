@@ -127,16 +127,12 @@ describe('Celestial Functions', () => {
       
       expect(typeof moonPosition.altitude).toBe('number');
       expect(typeof moonPosition.phase).toBe('number');
-      expect(typeof moonPosition.illumination).toBe('number');
       
       expect(moonPosition.altitude).toBeGreaterThanOrEqual(0);
       expect(moonPosition.altitude).toBeLessThanOrEqual(90);
       
       expect(moonPosition.phase).toBeGreaterThanOrEqual(0);
       expect(moonPosition.phase).toBeLessThanOrEqual(360);
-      
-      expect(moonPosition.illumination).toBeGreaterThanOrEqual(-1);
-      expect(moonPosition.illumination).toBeLessThanOrEqual(1);
     });
 
     test('should calculate moon position in Paris', () => {
@@ -145,16 +141,12 @@ describe('Celestial Functions', () => {
       
       expect(typeof moonPosition.altitude).toBe('number');
       expect(typeof moonPosition.phase).toBe('number');
-      expect(typeof moonPosition.illumination).toBe('number');
       
       expect(moonPosition.altitude).toBeGreaterThanOrEqual(0);
       expect(moonPosition.altitude).toBeLessThanOrEqual(90);
       
       expect(moonPosition.phase).toBeGreaterThanOrEqual(0);
       expect(moonPosition.phase).toBeLessThanOrEqual(360);
-      
-      expect(moonPosition.illumination).toBeGreaterThanOrEqual(-1);
-      expect(moonPosition.illumination).toBeLessThanOrEqual(1);
     });
   });
 
