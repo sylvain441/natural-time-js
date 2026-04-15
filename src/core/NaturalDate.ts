@@ -94,9 +94,24 @@ export class NaturalDate {
 
     /** Artificial gregorian date (UNIX timestamp) */
     readonly unixTime: number;
-    
-    /** Longitude in degrees (-180° to +180°) */
+
+    /** Longitude in degrees (-180° to +180°) as provided */
     readonly longitude: number;
+
+    /**
+     * Number of decimal places used for longitude in calculations (default: 0).
+     * - 0 → integer zones, 360 discrete NT zones (e.g. 1.57° → 1°)
+     * - 1 → 0.1° precision, 3600 zones        (e.g. 1.57° → 1.5°)
+     * - n → 10^n zones globally
+     * - Infinity → exact solar longitude, fully analog
+     */
+    readonly precision: number;
+
+    /**
+     * The longitude value actually used in calculations, truncated to `precision`
+     * decimal places. Equals longitude when precision is Infinity.
+     */
+    readonly effectiveLongitude: number;
 
     /** Current natural year (year 001: winter solstice 2012 > winter solstice 2013) */
     readonly year: number;
@@ -145,38 +160,46 @@ export class NaturalDate {
      * 
      * @param date - JavaScript Date object, Unix timestamp, or date string
      * @param longitude - Longitude in degrees (-180 to 180)
+     * @param precision - Number of decimal places used for longitude in calculations (default: 0).
+     *   - 0 → integer zones, 360 discrete NT zones (e.g. 2.3522° → 2°)
+     *   - 1 → 0.1° precision, 3600 zones        (e.g. 2.3522° → 2.3°)
+     *   - Infinity → exact solar longitude, fully analog
      * @throws {Error} If inputs are invalid
-     * 
+     *
      * @example
-     * // Create a natural date for the current time in Paris (longitude 2.3522)
+     * // Default (precision=0) — Paris 2.3522° → calculated as if at 2°
      * const parisNaturalDate = new NaturalDate(new Date(), 2.3522);
-     * 
+     *
      * @example
-     * // Create a natural date for a specific time in Tokyo (longitude 139.6503)
-     * const tokyoNaturalDate = new NaturalDate('2023-06-21T12:00:00', 139.6503);
+     * // Analog mode — uses exact longitude
+     * const parisAnalog = new NaturalDate(new Date(), 2.3522, Infinity);
      */
-    constructor(date: Date | number | string | null | undefined, longitude?: number) {
+    constructor(date: Date | number | string | null | undefined, longitude?: number, precision: number = 0) {
         // Validate longitude
         if (longitude !== undefined && (typeof longitude !== 'number' || longitude < -180 || longitude > 180)) {
             throw new Error('Longitude must be between -180 and +180');
         }
-        
+
         const dateObj = new Date(date || Date.now());
         if (isNaN(dateObj.getTime())) {
             throw new Error('Invalid date provided');
         }
-        
+
         this.unixTime = dateObj.getTime();
         this.longitude = longitude || 0;
-        
+        this.precision = precision;
+        this.effectiveLongitude = (precision === Infinity)
+            ? this.longitude
+            : Math.trunc(this.longitude * Math.pow(10, precision)) / Math.pow(10, precision);
+
         if (Number.isFinite(this.unixTime)) {
             // YEAR START & DURATION
-            let yearContext = calculateYearContext(dateObj.getUTCFullYear()-1, this.longitude);
-            
+            let yearContext = calculateYearContext(dateObj.getUTCFullYear()-1, this.effectiveLongitude);
+
             // Correction if between the beginning of natural year and the end of the artificial year
             if(this.unixTime - yearContext.start >= yearContext.duration * NaturalDate.MILLISECONDS_PER_DAY)
-                yearContext = calculateYearContext(dateObj.getUTCFullYear(), this.longitude);
-            
+                yearContext = calculateYearContext(dateObj.getUTCFullYear(), this.effectiveLongitude);
+
             this.yearStart = yearContext.start;
             this.yearDuration = yearContext.duration;
 
@@ -186,14 +209,14 @@ export class NaturalDate {
             this.year = new Date(this.yearStart).getUTCFullYear() - new Date(NaturalDate.END_OF_ARTIFICIAL_TIME).getUTCFullYear() + 1;
 
             // MOON
-            this.moon = Math.floor(timeSinceLocalYearStart / 28) + 1; 
-            
+            this.moon = Math.floor(timeSinceLocalYearStart / 28) + 1;
+
             // HEPTAD
             this.week = Math.floor(timeSinceLocalYearStart / 7) + 1;
             this.weekOfMoon = Math.floor(timeSinceLocalYearStart / 7) % 4 + 1;
-            
+
             // DAY
-            this.day = Math.floor((this.unixTime - (NaturalDate.END_OF_ARTIFICIAL_TIME + (-this.longitude + 180) * NaturalDate.MILLISECONDS_PER_DAY/360)) / NaturalDate.MILLISECONDS_PER_DAY);
+            this.day = Math.floor((this.unixTime - (NaturalDate.END_OF_ARTIFICIAL_TIME + (-this.effectiveLongitude + 180) * NaturalDate.MILLISECONDS_PER_DAY/360)) / NaturalDate.MILLISECONDS_PER_DAY);
             this.dayOfYear = Math.floor(timeSinceLocalYearStart) + 1;
             this.dayOfMoon = Math.floor(timeSinceLocalYearStart) % 28 + 1;
             this.dayOfWeek = Math.floor(timeSinceLocalYearStart) % 7 + 1;
@@ -307,23 +330,26 @@ export class NaturalDate {
 
     /**
      * Exports the longitude part of the natural date.
-     * 
-     * @param decimals - Number of decimal places for longitude (default: 1)
+     *
+     * @param decimals - Number of decimal places for longitude.
+     *   Defaults to `this.precision` so the displayed zone matches the one used in calculations
+     *   (e.g. precision=0 → "NT+2", precision=1 → "NT+2.3").
+     *   When precision is Infinity, defaults to 0 (integer zone label).
      * @returns Formatted longitude string
      */
-    toLongitudeString(decimals: number = 1): string {
-        // Consider longitudes very close to 0 (within 0.5 degrees) as NTZ
-        if (Math.abs(this.longitude) < 0.5) {
+    toLongitudeString(decimals: number = Number.isFinite(this.precision) ? this.precision : 0): string {
+        // NTZ when the integer part (truncated toward zero) is 0, i.e. abs < 1
+        if (Math.abs(this.longitude) < 1) {
             return 'NTZ';
         }
         const prefix = 'NT';
         const sign = this.longitude >= 0 ? '+' : '-';
         const absLongitude = Math.abs(this.longitude);
-        const integerPart = Math.floor(absLongitude).toString().padStart(1, '0');
+        const integerPart = Math.trunc(absLongitude).toString().padStart(1, '0');
         const decimalPart = decimals > 0
             ? (absLongitude % 1).toFixed(decimals).substring(2)
             : '';
-        
+
         return `${prefix}${sign}${integerPart}${decimals > 0 ? '.' + decimalPart : ''}`;
     }
 

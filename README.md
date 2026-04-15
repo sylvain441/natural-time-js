@@ -46,21 +46,35 @@ The core class for working with Natural Time:
 ```javascript
 import { NaturalDate } from 'natural-time-js';
 
-// Convert current time at longitude 5.2° E
-const naturalDate = new NaturalDate(new Date(), 5.2);
-console.log(naturalDate.toString()); // "004)04)01 113°00 NT+5.2"
+// Default (precision=0): longitude is truncated to the nearest integer zone
+// Paris 2.3522° → calculated as NT+2
+const naturalDate = new NaturalDate(new Date(), 2.3522);
+console.log(naturalDate.toString()); // "013)04)01 113°00 NT+2.3"
+
+// Analog mode (precision=Infinity): uses exact longitude
+const naturalDateAnalog = new NaturalDate(new Date(), 2.3522, Infinity);
 ```
+
+The third argument `precision` controls how many decimal places of longitude are used for calculations:
+
+| `precision` | Effective longitude | Zones |
+|-------------|--------------------:|------:|
+| `0` (default) | `Math.trunc(lon)` → e.g. 2.3° → 2° | 360 |
+| `1` | Truncated to 0.1° → e.g. 2.3522° → 2.3° | 3600 |
+| `Infinity` | Exact longitude — fully analog | ∞ |
 
 #### Properties
 
 ```javascript
 // Time Properties
-naturalDate.unixTime;    // Artificial gregorian date (UNIX timestamp)
-naturalDate.time;        // Current time in degrees (0-359.999...)
-naturalDate.nadir;       // Beginning of the day at current longitude (UNIX timestamp)
+naturalDate.unixTime;          // Artificial gregorian date (UNIX timestamp)
+naturalDate.time;              // Current time in degrees (0-359.999...)
+naturalDate.nadir;             // Beginning of the day at current longitude (UNIX timestamp)
 
 // Location
-naturalDate.longitude;   // Longitude (-180° to +180°)
+naturalDate.longitude;         // Raw longitude as provided (-180° to +180°)
+naturalDate.precision;         // Decimal places used in calculations (default: 0)
+naturalDate.effectiveLongitude;// Longitude actually used in calculations (truncated to precision)
 
 // Year Properties
 naturalDate.year;        // Current year (year 1: 2012/2013)
@@ -89,10 +103,11 @@ NaturalDate.MILLISECONDS_PER_DAY;   // 86400000 (24*60*60*1000)
 #### Utility Methods
 
 ```javascript
-naturalDate.toString();              // "004)04)01 113°00 NT+5.2"
+naturalDate.toString();              // "004)04)01 113°00 NT+5"  (precision=0 default)
 naturalDate.toDateString();          // "004)04)01"
 naturalDate.toTimeString();          // "113°00"
-naturalDate.toLongitudeString();     // "NT+5.2"
+naturalDate.toLongitudeString();     // "NT+5"                   (matches precision)
+naturalDate.toLongitudeString(1);    // "NT+5.2"                 (explicit decimals)
 naturalDate.toYearString();          // "004"
 naturalDate.toMoonString();          // "04"
 naturalDate.toDayOfMoonString();     // "01"

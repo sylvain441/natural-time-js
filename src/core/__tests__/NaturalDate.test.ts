@@ -295,8 +295,9 @@ describe('NaturalDate', () => {
     test('should calculate time correctly when crossing the International Date Line', () => {
       // Create two dates at opposite sides of the International Date Line
       // but at the same moment in time
-      const dateJustEast = new NaturalDate('2023-01-01T12:00:00Z', 179.9);
-      const dateJustWest = new NaturalDate('2023-01-01T12:00:00Z', -179.9);
+      // precision=Infinity to use exact longitude without zone truncation
+      const dateJustEast = new NaturalDate('2023-01-01T12:00:00Z', 179.9, Infinity);
+      const dateJustWest = new NaturalDate('2023-01-01T12:00:00Z', -179.9, Infinity);
       
       // At longitude 179.9, noon UTC should be close to 359.9° (just before midnight)
       // At longitude -179.9, noon UTC should be close to 0.1° (just after midnight)
@@ -483,7 +484,7 @@ describe('NaturalDate', () => {
       // Verify the format matches the specification
       // Format: YYY)MM)DD SUN° NT(+/-)LONGITUDE
       // We use a more general regex to match the actual format
-      expect(date.toString()).toMatch(/^\d{3}\)\d{2}\)\d{2} \d{3}°\d{2} NT\+5\.0$/);
+      expect(date.toString()).toMatch(/^\d{3}\)\d{2}\)\d{2} \d{3}°\d{2} NT\+5$/);
     });
 
     test('should format rainbow days correctly in toDateString', () => {
@@ -706,7 +707,57 @@ describe('NaturalDate', () => {
     });
   });
 
-  describe('7. Edge Cases and Error Handling', () => {
+  describe('7. Precision Parameter Tests', () => {
+    test('precision=0 (default) truncates longitude to integer zone', () => {
+      const date1 = new NaturalDate('2023-01-01T12:00:00Z', 2.9);    // → effectiveLongitude = 2
+      const date2 = new NaturalDate('2023-01-01T12:00:00Z', 2);      // → effectiveLongitude = 2
+      expect(date1.effectiveLongitude).toBe(2);
+      expect(date2.effectiveLongitude).toBe(2);
+      expect(date1.time).toBeCloseTo(date2.time, 5);
+    });
+
+    test('precision=0 truncates toward zero for negative longitudes', () => {
+      const date = new NaturalDate('2023-01-01T12:00:00Z', -5.9);   // → effectiveLongitude = -5
+      expect(date.effectiveLongitude).toBe(-5);
+    });
+
+    test('precision=1 truncates to one decimal place', () => {
+      const date = new NaturalDate('2023-01-01T12:00:00Z', 2.3522, 1); // → effectiveLongitude = 2.3
+      expect(date.effectiveLongitude).toBeCloseTo(2.3, 10);
+    });
+
+    test('precision=Infinity uses exact longitude', () => {
+      const lon = 2.3522;
+      const date = new NaturalDate('2023-01-01T12:00:00Z', lon, Infinity);
+      expect(date.effectiveLongitude).toBe(lon);
+    });
+
+    test('precision property is stored correctly', () => {
+      expect(new NaturalDate(new Date(), 5).precision).toBe(0);
+      expect(new NaturalDate(new Date(), 5, 1).precision).toBe(1);
+      expect(new NaturalDate(new Date(), 5, Infinity).precision).toBe(Infinity);
+    });
+
+    test('different precision values give different times for fractional longitudes', () => {
+      const lon = 45.7;
+      const zone  = new NaturalDate('2023-01-01T12:00:00Z', lon, 0);       // → 45°
+      const analog = new NaturalDate('2023-01-01T12:00:00Z', lon, Infinity); // → 45.7°
+      expect(zone.effectiveLongitude).toBe(45);
+      expect(analog.effectiveLongitude).toBe(45.7);
+      // The difference in time should correspond to 0.7° of longitude
+      const expectedTimeDiff = 0.7; // 0.7° longitude = 0.7° of natural time
+      expect(Math.abs(analog.time - zone.time)).toBeCloseTo(expectedTimeDiff, 0);
+    });
+
+    test('precision=0 is the default', () => {
+      const withDefault = new NaturalDate('2023-01-01T12:00:00Z', 3.5);
+      const withExplicit = new NaturalDate('2023-01-01T12:00:00Z', 3.5, 0);
+      expect(withDefault.effectiveLongitude).toBe(withExplicit.effectiveLongitude);
+      expect(withDefault.time).toBeCloseTo(withExplicit.time, 10);
+    });
+  });
+
+  describe('8. Edge Cases and Error Handling Tests', () => {
     test('should handle extreme longitudes correctly', () => {
       // Test with longitude 180°
       expect(() => new NaturalDate(new Date(), 180)).not.toThrow();
