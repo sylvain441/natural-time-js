@@ -1,0 +1,26 @@
+name: publish
+
+# npm trusted publishing: no token, npm trusts this workflow file in this repo.
+# Needs npm >= 11.5.1, hence Node 24.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm publish
