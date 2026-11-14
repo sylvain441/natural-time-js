@@ -49,7 +49,7 @@ import { NaturalDate } from 'natural-time-js';
 // Default (precision=0): longitude is truncated to the nearest integer zone
 // Paris 2.3522° → calculated as NT+2
 const naturalDate = new NaturalDate(new Date(), 2.3522);
-console.log(naturalDate.toString()); // "013)04)01 113°00 NT+2.3"
+console.log(naturalDate.toString()); // "013)04)01 113°00 NT+2"
 
 // Analog mode (precision=Infinity): uses exact longitude
 const naturalDateAnalog = new NaturalDate(new Date(), 2.3522, Infinity);
@@ -106,6 +106,7 @@ NaturalDate.MILLISECONDS_PER_DAY;   // 86400000 (24*60*60*1000)
 naturalDate.toString();              // "004)04)01 113°00 NT+5"  (precision=0 default)
 naturalDate.toDateString();          // "004)04)01"
 naturalDate.toTimeString();          // "113°00"
+naturalDate.toTimeString(0);         // "113°"                   (cut, never rounded)
 naturalDate.toLongitudeString();     // "NT+5"                   (matches precision)
 naturalDate.toLongitudeString(1);    // "NT+5.2"                 (explicit decimals)
 naturalDate.toYearString();          // "004"
@@ -118,12 +119,17 @@ naturalDate.toDayOfMoonString();     // "01"
 Calculate precise celestial events and positions:
 
 ```javascript
-import { NaturalSunEvents, NaturalMoonPosition } from 'natural-time-js';
+import { NaturalDate, NaturalSunPosition, NaturalSunEvents, NaturalMoonPosition } from 'natural-time-js';
 
 // Giza Pyramid coordinates
 const latitude = 29.9791;
 const longitude = 31.1341;
 const naturalDate = new NaturalDate(new Date(), longitude);
+
+// Get current sun position
+const sunPosition = NaturalSunPosition(naturalDate, latitude);
+console.log(sunPosition.azimuth);    // 178.421° (clockwise from north)
+console.log(sunPosition.elevation);  // 64.323° (negative below horizon)
 
 // Get sun events for the day
 const sunEvents = NaturalSunEvents(naturalDate, latitude);
@@ -132,29 +138,13 @@ console.log(sunEvents.sunset);   // 287.910°
 
 // Get current moon position and phase
 const moonInfo = NaturalMoonPosition(naturalDate, latitude);
-console.log(moonInfo.phase);     // 74.861° (percentage of lunar cycle)
+console.log(moonInfo.phase);     // 74.861° (0° new moon, 180° full moon)
 console.log(moonInfo.altitude);  // 64.323° (degrees above horizon)
 ```
 
-## Documentation
-
-The library is fully documented using JSDoc. Generate the documentation with:
-
-```bash
-npm run docs
-```
-
-For live documentation updates during development:
-
-```bash
-npm run docs:dev
-```
-
-This creates HTML documentation in the `docs` directory.
-
 ## Contribute
 
-Natural time is open to contributions from free-thinking minds. Find your way through Github or email at: [sylvain441@proton.me](mailto:sylvain441@proton.me) to get in touch.
+Natural time is open to contributions from free-thinking minds. Find your way through Github or email at: [sylvain@biquette.xyz](mailto:sylvain@biquette.xyz) to get in touch.
 
 ## License
 
