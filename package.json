@@ -1,6 +1,6 @@
 {
   "name": "natural-time-js",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Natural Time, the reference implementation: the day in 360 degrees of sun at your longitude, the year in 13 moons of 28 days from the winter solstice. https://naturaltime.app",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
