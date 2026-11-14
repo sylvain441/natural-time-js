@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.1]
 
 ### Changed
-- Published from GitHub Actions through npm trusted publishing, with provenance. No change to the code.
+- Published from GitHub Actions through npm trusted publishing, with provenance. No change to the library.
+- The golden vectors test accepts the tolerances the file announces, like C and Python: the last bit of a sine differs from one machine to another.
 
 ## [3.0.0]
 

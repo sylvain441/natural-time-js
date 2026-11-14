@@ -1,5 +1,7 @@
 /**
- * Golden vectors guard: the library must still answer every recorded case exactly.
+ * Golden vectors guard: the library must still answer every recorded case,
+ * within the tolerances the file announces, like natural-time-c and natural-time-py.
+ * Not bit for bit: Math.sin and friends differ in the last bit from one V8 or OS to another.
  * Nobody changes its answers without regenerating the file on purpose
  * (npm run build && npm run vectors).
  */
@@ -21,6 +23,21 @@ type Vector = Record<string, unknown>;
 // Jest runs from the repository root
 const FILE = path.join(process.cwd(), 'vectors', 'natural-time-vectors.jsonl');
 const lines = fs.readFileSync(FILE, 'utf8').split('\n').filter((line) => line.length > 0);
+const { meta } = JSON.parse(lines[0]);
+
+// Float fields get their announced tolerance, everything else must be equal
+function tolerance(field: string): number {
+  if (field === 'time_deg' || field === 'effective_longitude') return meta.tolerances[field];
+  if (meta.event_deg.includes(field)) return meta.tolerances.event_deg;
+  if (meta.angle_deg.includes(field)) return meta.tolerances.angle_deg;
+  return 0;
+}
+
+function same(field: string, want: unknown, got: unknown): boolean {
+  // Not Object.is: JSON writes -0 as 0, and a longitude cut from -0.7 is -0
+  if (want === got) return true;
+  return typeof want === 'number' && typeof got === 'number' && Math.abs(want - got) <= tolerance(field);
+}
 
 // Mirrors vectors/generate.mjs, field by field
 function compute(c: Vector): Vector {
@@ -97,11 +114,10 @@ function compute(c: Vector): Vector {
 
 describe('Golden vectors', () => {
   test('meta line matches the number of cases', () => {
-    const { meta } = JSON.parse(lines[0]);
     expect(meta.cases).toBe(lines.length - 1);
   });
 
-  test('every case is answered exactly as recorded', () => {
+  test('every case is answered as recorded', () => {
     const mismatches: string[] = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -109,8 +125,7 @@ describe('Golden vectors', () => {
       const received = compute(expected);
 
       for (const field of new Set([...Object.keys(expected), ...Object.keys(received)])) {
-        // Not Object.is: JSON writes -0 as 0, and a longitude cut from -0.7 is -0
-        if (expected[field] !== received[field]) {
+        if (!same(field, expected[field], received[field])) {
           mismatches.push(
             `line ${i + 1}, field ${field}: expected ${JSON.stringify(expected[field])}, received ${JSON.stringify(received[field])}`
             + ` (unix_ms=${expected.unix_ms} longitude=${expected.longitude} precision=${expected.precision} latitude=${expected.latitude})`
